@@ -1,16 +1,16 @@
 {
   "private": true,
-  "displayName": "Aqua Connect",
-  "name": "homebridge-aqua-connect",
+  "displayName": "Aqua Connect Lite",
+  "name": "homebridge-aqua-connect-lite",
   "version": "1.0.0",
-  "description": "Control your pool through the Aqua Connect ECommand4.",
+  "description": "Basic Control of your pool using Aqua Connect",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git://github.com/cupshir/homebridge-aqua-connect.git"
+    "url": "git://github.com/cupshir/homebridge-aqua-connect-lite.git"
   },
   "bugs": {
-    "url": "https://github.com/cupshir/homebridge-aqua-connect/issues"
+    "url": "https://github.com/cupshir/homebridge-aqua-connect-lite/issues"
   },
   "engines": {
     "node": ">=14.18.1",
@@ -25,6 +25,9 @@
   },
   "keywords": [
     "homebridge-plugin",
+    "aqua-connect-lite",
+    "aqua connect lite",
+    "aquaconnectlite",
     "aqua-connect",
     "aqua connect",
     "aquaconnect"

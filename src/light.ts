@@ -1,6 +1,6 @@
 import { Service, PlatformAccessory, CharacteristicValue } from 'homebridge';
 
-import { AquaConnectPlatform } from './platform';
+import { AquaConnectLitePlatform } from './platform';
 
 import { GetDeviceState } from './util'
 
@@ -15,7 +15,7 @@ export class Light {
   private path = '/WNewSt.htm';
 
   constructor(
-    private readonly platform: AquaConnectPlatform,
+    private readonly platform: AquaConnectLitePlatform,
     private readonly accessory: PlatformAccessory,
   ) {
 

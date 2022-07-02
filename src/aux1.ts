@@ -3,7 +3,7 @@ import { AquaConnectLitePlatform } from './platform';
 import { GetDeviceState, ToggleDeviceState } from './util'
 import { DEFAULT_DEVICE_INFO } from './settings';
 
-export class Light {
+export class Aux1 {
     private service: Service;
 
     private currentState = {
@@ -14,7 +14,7 @@ export class Light {
         private readonly platform: AquaConnectLitePlatform,
         private readonly accessory: PlatformAccessory) {
 
-        this.service = this.accessory.getService(this.platform.Service.Lightbulb) || this.accessory.addService(this.platform.Service.Lightbulb);
+        this.service = this.accessory.getService(this.platform.Service.Switch) || this.accessory.addService(this.platform.Service.Switch);
 
         this.service.setCharacteristic(this.platform.Characteristic.Name, accessory.displayName);
 
@@ -29,7 +29,7 @@ export class Light {
         // check our device state
         await GetDeviceState(
             this.platform.config,
-            DEFAULT_DEVICE_INFO.LIGHT.STATUS_KEY_INDEX )
+            DEFAULT_DEVICE_INFO.AUX1.STATUS_KEY_INDEX )
         .then( (deviceState) => {
             if ((deviceState === 'on' && this.currentState.On)
                 || (deviceState === 'off' && !this.currentState.On )) {
@@ -37,7 +37,7 @@ export class Light {
             } 
             })
         .catch( (error) => {
-            console.log(`-setOn lightError: ${error}`);
+            console.log(`-setOn Error: ${error}`);
             throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
         });
 
@@ -45,13 +45,13 @@ export class Light {
             // device is not in requested state, toggle it
             await ToggleDeviceState(
                 this.platform.config,
-                DEFAULT_DEVICE_INFO.LIGHT.PROCESS_KEY_NUM)
+                DEFAULT_DEVICE_INFO.AUX1.PROCESS_KEY_NUM)
             .then((response) => {
                 console.log(`-setOn response: ${response}`);
                 //this.currentState.On = !this.currentState.On;
             })
             .catch( (error) => {
-                console.log(`-setOn lightError: ${error}`);
+                console.log(`-setOn Error: ${error}`);
             });
         }        
     }
@@ -60,13 +60,13 @@ export class Light {
         // send request to get our device state
         await GetDeviceState(
                 this.platform.config,
-                DEFAULT_DEVICE_INFO.LIGHT.STATUS_KEY_INDEX )
+                DEFAULT_DEVICE_INFO.AUX1.STATUS_KEY_INDEX )
             .then( (deviceState) => {
-                console.log(`lightDeviceState: ${deviceState}`)
+                console.log(`aux1DeviceState: ${deviceState}`)
                 this.currentState.On = deviceState === 'on';
             })
             .catch( (error) => {
-                console.log(`getOn lightError: ${error}`);
+                console.log(`getOn Error: ${error}`);
                 throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
             });
         return this.currentState.On;

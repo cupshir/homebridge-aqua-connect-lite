@@ -14,7 +14,7 @@ export const ACL_API_SETTINGS = {
 
 export const DEFAULT_DEVICE_INFO = {
     LIGHT: {
-        DEVICE_NAME: 'Pool Light',
+        DEVICE_NAME: 'Light',
         DEVICE_TYPE: 'light',
         PROCESS_KEY_NUM: '09',
         STATUS_KEY_INDEX: 4
@@ -24,5 +24,11 @@ export const DEFAULT_DEVICE_INFO = {
         DEVICE_TYPE: 'aux1',
         PROCESS_KEY_NUM: '0A',
         STATUS_KEY_INDEX: 9
+    },
+    FILTER: {
+        DEVICE_NAME: 'Filter',
+        DEVICE_TYPE: 'filter',
+        PROCESS_KEY_NUM: '08',
+        STATUS_KEY_INDEX: 3
     }
 };

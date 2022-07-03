@@ -1,4 +1,5 @@
 import { Service, PlatformAccessory, CharacteristicValue } from 'homebridge';
+
 import { AquaConnectLitePlatform } from './platform';
 import { GetDeviceState, ToggleDeviceState } from './util'
 import { DEFAULT_DEVICE_INFO } from './settings';
@@ -26,32 +27,39 @@ export class Light {
     async setOn(value: CharacteristicValue) {
         let toggleDevice = false;
 
-        // check our device state
+        // check our device state to determine if we need to send the toggle request
+        // this ensures if device was toggled manually, then we get homebridge in sync
+        // before trying to toggle again, its annoying when homebridge state is opposite
+        // the real state...
         await GetDeviceState(
             this.platform.config,
-            DEFAULT_DEVICE_INFO.LIGHT.STATUS_KEY_INDEX )
-        .then( (deviceState) => {
+            DEFAULT_DEVICE_INFO.LIGHT.STATUS_KEY_INDEX)
+        .then((deviceState) => {
             if ((deviceState === 'on' && this.currentState.On)
-                || (deviceState === 'off' && !this.currentState.On )) {
+                || (deviceState === 'off' && !this.currentState.On)) {
                 toggleDevice = true;
             } 
-            })
-        .catch( (error) => {
-            console.log(`-setOn lightError: ${error}`);
+        })
+        .catch((error) => {
+            this.platform.log.error(`Error getting light device state: ${error}`);
             throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
         });
 
-        if ( toggleDevice ) {
+        if (toggleDevice) {
             // device is not in requested state, toggle it
             await ToggleDeviceState(
                 this.platform.config,
                 DEFAULT_DEVICE_INFO.LIGHT.PROCESS_KEY_NUM)
             .then((response) => {
-                console.log(`-setOn response: ${response}`);
-                //this.currentState.On = !this.currentState.On;
+                // due to the way aqua connect works, the response from the toggle
+                // is not helpful, we require another getOn request
+                // which homebridge will trigger after setOn is complete
+                // so we assume the toggle worked and getOn will correct it if needed
+                this.currentState.On = !this.currentState.On;
             })
             .catch( (error) => {
-                console.log(`-setOn lightError: ${error}`);
+                this.platform.log.error(`Error toggling light device: ${error}`);
+                throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
             });
         }        
     }
@@ -60,15 +68,15 @@ export class Light {
         // send request to get our device state
         await GetDeviceState(
                 this.platform.config,
-                DEFAULT_DEVICE_INFO.LIGHT.STATUS_KEY_INDEX )
-            .then( (deviceState) => {
-                console.log(`lightDeviceState: ${deviceState}`)
+                DEFAULT_DEVICE_INFO.LIGHT.STATUS_KEY_INDEX)
+            .then((deviceState) => {
                 this.currentState.On = deviceState === 'on';
             })
-            .catch( (error) => {
-                console.log(`getOn lightError: ${error}`);
+            .catch((error) => {
+                this.platform.log.error(`Error getting light device state: ${error}`);
                 throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
             });
+            
         return this.currentState.On;
     }
 }

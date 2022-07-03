@@ -21,52 +21,6 @@
                 "type": "string",
                 "required": true,
                 "default": "/WNewSt.htm"
-            },
-            "accessories": {
-                "title": "Accessories",
-                "type": "array",
-                "uniqueItems": true,
-                "items": {
-                    "title": "Device",
-                    "type": "object",
-                    "properties": {
-                        "name": {
-                            "title": "Name",
-                            "type": "string",
-                            "required": true
-                        },
-                        "deviceType": {
-                            "title": "Device Type",
-                            "type": "string",
-                            "required": true,
-                            "oneOf": [
-                                {
-                                    "title": "Light",
-                                    "enum": [
-                                    "light"
-                                    ]
-                                },
-                                {
-                                    "title": "AUX 1",
-                                    "enum": [
-                                    "aux1"
-                                    ]
-                                },
-                                {
-                                    "title": "Filter",
-                                    "enum": [
-                                    "filter"
-                                    ]
-                                }
-                            ]
-                        },
-                        "overrideProcessKey": {
-                            "title": "Override Process Key",
-                            "type": "string",
-                            "required": false
-                        }
-                    }
-                }
             }
         }
     }

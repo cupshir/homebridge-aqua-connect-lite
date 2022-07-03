@@ -1,7 +1,7 @@
 import { PlatformConfig } from 'homebridge';
-
 import http from 'http';
 import { parse } from 'node-html-parser';
+
 import { ACL_API_SETTINGS } from './settings';
 
 export const GetDeviceState = (config: PlatformConfig, deviceKeyIndex: number): Promise<string> => {
@@ -23,7 +23,7 @@ export const GetDeviceState = (config: PlatformConfig, deviceKeyIndex: number): 
 				// successfull response
 				let responseData = '';
 		
-				// build responseData, this prevents race conditions
+				// build responseData
 				response.on('data', (chunk) => {
 					responseData += chunk;
 				});
@@ -32,17 +32,14 @@ export const GetDeviceState = (config: PlatformConfig, deviceKeyIndex: number): 
 				response.on('end', () => {
 					// get the raw led status from the html response
 					let rawLedStatus = GetRawLedStatus(responseData);
-					console.log(`${deviceKeyIndex} rawLedStatus: ${rawLedStatus}`)
 
 					// convert the raw led status into ascii byte string
 					let asciiByteString = ConvertToAsciiByteString(rawLedStatus);
-					console.log(`${deviceKeyIndex} asciiByteString: ${asciiByteString}`)
 			
 					// the ascii byte string has 24 bits that indicate the status
 					// of various led's on the controller
 					// using our device type, get the respective led status
 					let ledStatus = GetLedStatus(asciiByteString, deviceKeyIndex);
-					console.log(`${deviceKeyIndex} ledStatus: ${ledStatus}`)
 
 					resolve(ledStatus);
 				});
@@ -73,14 +70,13 @@ export const ToggleDeviceState = (config: PlatformConfig, processKeyNum: string)
 				'Content-Length': body.length,
 				'Connection': 'close',
 			}
-		}
+		};
 
 		const req = http.request(postOptions, response => {
 			if (response.statusCode === 200) {
 				// we need a slight delay to give the pool controller
 				// time to update its display
 				setTimeout(function() {
-					console.log('toggle success delay complete');
 					resolve('success');
 				}, 300);
 			}
@@ -109,12 +105,10 @@ const GetRawLedStatus = (htmlData: string): string => {
 	return '';
 }
 
-const GetLedStatus = (
-		asciiByteString: string, deviceKeyIndex: number
-	): string => {
+const GetLedStatus = (asciiByteString: string, deviceKeyIndex: number): string => {
 		let statusString = '';
 
-		if (deviceKeyIndex > -1) {
+		if (deviceKeyIndex >= 0 && deviceKeyIndex < asciiByteString.length) {
 			let statusCode = asciiByteString[deviceKeyIndex];
 			switch (statusCode) {
 				case "3":

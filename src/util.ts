@@ -6,7 +6,7 @@ import { ACL_API_SETTINGS } from './settings';
 
 export const GetDeviceState = (config: PlatformConfig, deviceKeyIndex: number): Promise<string> => {
 	return new Promise<string>((resolve, reject) => {
-		let postOptions = {
+		const postOptions = {
 			hostname: config.bridge_ip_address,
 			path: config.bridge_path,
 			method: 'POST',
@@ -31,15 +31,15 @@ export const GetDeviceState = (config: PlatformConfig, deviceKeyIndex: number): 
 				// we have our response data now process it
 				response.on('end', () => {
 					// get the raw led status from the html response
-					let rawLedStatus = GetRawLedStatus(responseData);
+					const rawLedStatus = GetRawLedStatus(responseData);
 
 					// convert the raw led status into ascii byte string
-					let asciiByteString = ConvertToAsciiByteString(rawLedStatus);
+					const asciiByteString = ConvertToAsciiByteString(rawLedStatus);
 			
 					// the ascii byte string has 24 bits that indicate the status
 					// of various led's on the controller
 					// using our device type, get the respective led status
-					let ledStatus = GetLedStatus(asciiByteString, deviceKeyIndex);
+					const ledStatus = GetLedStatus(asciiByteString, deviceKeyIndex);
 
 					resolve(ledStatus);
 				});
@@ -61,7 +61,7 @@ export const ToggleDeviceState = (config: PlatformConfig, processKeyNum: string)
 	return new Promise<string>((resolve,reject) => {
 		const body = "KeyId=" + processKeyNum + "&";
 
-		let postOptions = {
+		const postOptions = {
 			hostname: config.bridge_ip_address,
 			path: config.bridge_path,
 			method: 'POST',
@@ -109,7 +109,7 @@ const GetLedStatus = (asciiByteString: string, deviceKeyIndex: number): string =
 		let statusString = '';
 
 		if (deviceKeyIndex >= 0 && deviceKeyIndex < asciiByteString.length) {
-			let statusCode = asciiByteString[deviceKeyIndex];
+			const statusCode = asciiByteString[deviceKeyIndex];
 			switch (statusCode) {
 				case "3":
 					statusString = 'nokey';
@@ -143,56 +143,56 @@ const ConvertToAsciiByteString = (rawLedStatus: string): string => {
 const ExtractNibbles = (asciiByte: string): string => {
 	let nibbles = "00"; 
 
-    switch ( asciiByte )
+	switch ( asciiByte )
     {
-    	case "3":
-        	nibbles = "33"; 
-        	break;
-      	case "4":
-        	nibbles = "34"; 
-        	break;
-      	case "5":
-        	nibbles = "35"; 
-        	break;
-      	case "6":
-        	nibbles = "36"; 
-        	break;
-    	case "C":
-        	nibbles = "43"; 
-        	break;
-      	case "D":
-        	nibbles = "44"; 
-        	break;
-      	case "E":
-        	nibbles = "45"; 
-        	break;
-      	case "F":
-        	nibbles = "46"; 
-        	break;
-    	case "S":
-        	nibbles = "53"; 
-        	break;
-      	case "T":
-        	nibbles = "54"; 
-        	break;
-      	case "U":
-        	nibbles = "55"; 
-        	break;
-      	case "V":
-        	nibbles = "56"; 
-        	break;
-    	case "c":
-        	nibbles = "63"; 
-        	break;
-      	case "d":
-        	nibbles = "64"; 
-        	break;
-      	case "e":
-        	nibbles = "65"; 
-        	break;
-      	case "f":
-        	nibbles = "66"; 
-        	break;
+		case "3":
+			nibbles = "33"; 
+			break;
+		case "4":
+			nibbles = "34"; 
+			break;
+		case "5":
+			nibbles = "35"; 
+			break;
+		case "6":
+			nibbles = "36"; 
+			break;
+		case "C":
+			nibbles = "43"; 
+			break;
+		case "D":
+			nibbles = "44"; 
+			break;
+		case "E":
+			nibbles = "45"; 
+			break;
+		case "F":
+			nibbles = "46"; 
+			break;
+		case "S":
+			nibbles = "53"; 
+			break;
+		case "T":
+			nibbles = "54"; 
+			break;
+		case "U":
+			nibbles = "55"; 
+			break;
+		case "V":
+			nibbles = "56"; 
+			break;
+		case "c":
+			nibbles = "63"; 
+			break;
+		case "d":
+			nibbles = "64"; 
+			break;
+		case "e":
+			nibbles = "65"; 
+			break;
+		case "f":
+			nibbles = "66"; 
+			break;
       default:
     }
 

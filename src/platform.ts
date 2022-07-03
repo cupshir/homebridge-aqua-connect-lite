@@ -32,8 +32,8 @@ export class AquaConnectLitePlatform implements DynamicPlatformPlugin {
     }
 
     discoverDevices() {
-        let deviceName = DEFAULT_DEVICE_INFO.LIGHT.DEVICE_NAME;
-        let deviceType = DEFAULT_DEVICE_INFO.LIGHT.DEVICE_TYPE;
+        const deviceName = DEFAULT_DEVICE_INFO.LIGHT.DEVICE_NAME;
+        const deviceType = DEFAULT_DEVICE_INFO.LIGHT.DEVICE_TYPE;
 
         // generate a unique id
         const uuid = this.api.hap.uuid.generate((PLATFORM_NAME + deviceName + deviceType));

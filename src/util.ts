@@ -93,9 +93,9 @@ export const ToggleDeviceState = (platform: AquaConnectLitePlatform, processKeyN
 			if (response.statusCode === 200) {
 				// we need a slight delay to give the pool controller
 				// time to update its display
-				setTimeout(function() {
+				//setTimeout(function() {
 					resolve('success');
-				}, 300);
+				//}, 300);
 			}
 		});
 

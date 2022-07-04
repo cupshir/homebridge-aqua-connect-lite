@@ -1,6 +1,6 @@
 import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, Service, Characteristic } from 'homebridge';
 
-import { PLATFORM_NAME, PLUGIN_NAME, DEFAULT_DEVICE_INFO } from './settings';
+import { PLATFORM_NAME, PLUGIN_NAME, ACCESSORY_INFO } from './settings';
 import { Light } from './light';
 
 /**
@@ -32,8 +32,8 @@ export class AquaConnectLitePlatform implements DynamicPlatformPlugin {
     }
 
     discoverDevices() {
-        const deviceName = DEFAULT_DEVICE_INFO.LIGHT.DEVICE_NAME;
-        const deviceType = DEFAULT_DEVICE_INFO.LIGHT.DEVICE_TYPE;
+        const deviceName = ACCESSORY_INFO.LIGHT.DEVICE_NAME;
+        const deviceType = ACCESSORY_INFO.LIGHT.DEVICE_TYPE;
 
         // generate a unique id
         const uuid = this.api.hap.uuid.generate((PLATFORM_NAME + deviceName + deviceType));

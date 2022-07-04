@@ -2,17 +2,17 @@ import { PlatformConfig } from 'homebridge';
 import http from 'http';
 import { parse } from 'node-html-parser';
 
-import { ACL_API_SETTINGS } from './settings';
+import { AC_API_SETTINGS } from './settings';
 
 export const GetDeviceState = (config: PlatformConfig, deviceKeyIndex: number): Promise<string> => {
 	return new Promise<string>((resolve, reject) => {
 		const postOptions = {
 			hostname: config.bridge_ip_address,
-			path: config.bridge_path,
+			path: AC_API_SETTINGS.PATH,
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/x-www-form-urlencoded',
-				'Content-Length': ACL_API_SETTINGS.UPDATE_LOCAL_SERVER_POST_BODY.length,
+				'Content-Length': AC_API_SETTINGS.UPDATE_LOCAL_SERVER_POST_BODY.length,
 				'Connection': 'close',
 			}
 		};
@@ -52,7 +52,7 @@ export const GetDeviceState = (config: PlatformConfig, deviceKeyIndex: number): 
 		});
 	
 		// send request
-		req.write(ACL_API_SETTINGS.UPDATE_LOCAL_SERVER_POST_BODY);
+		req.write(AC_API_SETTINGS.UPDATE_LOCAL_SERVER_POST_BODY);
 		req.end();
 	});
 };
@@ -63,7 +63,7 @@ export const ToggleDeviceState = (config: PlatformConfig, processKeyNum: string)
 
 		const postOptions = {
 			hostname: config.bridge_ip_address,
-			path: config.bridge_path,
+			path: AC_API_SETTINGS.PATH,
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/x-www-form-urlencoded',

@@ -2,7 +2,7 @@ import { Service, PlatformAccessory, CharacteristicValue } from 'homebridge';
 
 import { AquaConnectLitePlatform } from './platform';
 import { GetDeviceState, ToggleDeviceState } from './util'
-import { DEFAULT_DEVICE_INFO } from './settings';
+import { ACCESSORY_INFO } from './settings';
 
 export class Light {
     private service: Service;
@@ -33,7 +33,7 @@ export class Light {
         // the real state...
         await GetDeviceState(
             this.platform.config,
-            DEFAULT_DEVICE_INFO.LIGHT.STATUS_KEY_INDEX)
+            ACCESSORY_INFO.LIGHT.STATUS_KEY_INDEX)
         .then((deviceState) => {
             if ((deviceState === 'on' && this.currentState.On)
                 || (deviceState === 'off' && !this.currentState.On)) {
@@ -49,7 +49,7 @@ export class Light {
             // device is not in requested state, toggle it
             await ToggleDeviceState(
                 this.platform.config,
-                DEFAULT_DEVICE_INFO.LIGHT.PROCESS_KEY_NUM)
+                ACCESSORY_INFO.LIGHT.PROCESS_KEY_NUM)
             .then((response) => {
                 // due to the way aqua connect works, the response from the toggle
                 // is not helpful, we require another getOn request
@@ -68,7 +68,7 @@ export class Light {
         // send request to get our device state
         await GetDeviceState(
                 this.platform.config,
-                DEFAULT_DEVICE_INFO.LIGHT.STATUS_KEY_INDEX)
+                ACCESSORY_INFO.LIGHT.STATUS_KEY_INDEX)
             .then((deviceState) => {
                 this.currentState.On = deviceState === 'on';
             })

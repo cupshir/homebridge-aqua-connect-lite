@@ -3,24 +3,13 @@
     "pluginType": "platform",
     "singular": true,
     "schema": {
+        "title": "Aqua Connect Lite Plugin",
         "type": "object",
         "properties": {
-            "name": {
-                "title": "Name",
-                "type": "string",
-                "required": true,
-                "default": "Aqua Connect Lite Plugin"
-            },
             "bridge_ip_address": {
                 "title": "Bridge Ip Address",
                 "type": "string",
                 "required": true
-            },
-            "bridge_path": {
-                "title": "Bridge Path",
-                "type": "string",
-                "required": true,
-                "default": "/WNewSt.htm"
             }
         }
     }

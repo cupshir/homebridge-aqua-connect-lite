@@ -1,3 +1,5 @@
+***currently broken. Built on wrong version of node...oops. will remove this once its fixed
+
 # homebridge-aqua-connect-lite
 
 Control your Haywared pool equipment with Aqua Connect Home Network via Homebridge!

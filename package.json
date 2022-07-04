@@ -32,6 +32,7 @@
     "aquaconnect"
   ],
   "dependencies": {
+    "homebridge-config-ui-x": "^4.48.1",
     "node-html-parser": "^5.3.3"
   },
   "devDependencies": {

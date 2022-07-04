@@ -1,13 +1,14 @@
-import { PlatformConfig } from 'homebridge';
+import { AquaConnectLitePlatform } from './platform';
+
 import http from 'http';
 import { parse } from 'node-html-parser';
 
 import { AC_API_SETTINGS } from './settings';
 
-export const GetDeviceState = (config: PlatformConfig, deviceKeyIndex: number): Promise<string> => {
+export const GetDeviceState = (platform: AquaConnectLitePlatform, deviceKeyIndex: number): Promise<string> => {
 	return new Promise<string>((resolve, reject) => {
 		const postOptions = {
-			hostname: config.bridge_ip_address,
+			hostname: platform.config.bridge_ip_address,
 			path: AC_API_SETTINGS.PATH,
 			method: 'POST',
 			headers: {
@@ -16,11 +17,17 @@ export const GetDeviceState = (config: PlatformConfig, deviceKeyIndex: number): 
 				'Connection': 'close',
 			}
 		};
+
+		platform.log.debug(`Starting GetDeviceState for device key index: ${deviceKeyIndex}`);
 		
 		// setup the request
 		const req = http.request(postOptions, response => {
+			platform.log.debug(`response statusCode: ${response.statusCode}`);
+
 			if (response.statusCode === 200) {
 				// successfull response
+				platform.log.debug('Update Local Server request successful.')
+
 				let responseData = '';
 		
 				// build responseData
@@ -30,16 +37,22 @@ export const GetDeviceState = (config: PlatformConfig, deviceKeyIndex: number): 
 				
 				// we have our response data now process it
 				response.on('end', () => {
+					platform.log.debug('Starting response processing');
+					platform.log.debug(`responseData: ${responseData}`);
+
 					// get the raw led status from the html response
 					const rawLedStatus = GetRawLedStatus(responseData);
+					platform.log.debug(`rawLEDStatus: ${rawLedStatus}`);
 
 					// convert the raw led status into ascii byte string
 					const asciiByteString = ConvertToAsciiByteString(rawLedStatus);
+					platform.log.debug(`asciiByteString: ${asciiByteString}`);
 			
 					// the ascii byte string has 24 bits that indicate the status
 					// of various led's on the controller
 					// using our device type, get the respective led status
 					const ledStatus = GetLedStatus(asciiByteString, deviceKeyIndex);
+					platform.log.debug(`ledStatus: ${ledStatus}`);
 
 					resolve(ledStatus);
 				});
@@ -57,12 +70,12 @@ export const GetDeviceState = (config: PlatformConfig, deviceKeyIndex: number): 
 	});
 };
 
-export const ToggleDeviceState = (config: PlatformConfig, processKeyNum: string): Promise<string> => {
+export const ToggleDeviceState = (platform: AquaConnectLitePlatform, processKeyNum: string): Promise<string> => {
 	return new Promise<string>((resolve,reject) => {
 		const body = "KeyId=" + processKeyNum + "&";
 
 		const postOptions = {
-			hostname: config.bridge_ip_address,
+			hostname: platform.config.bridge_ip_address,
 			path: AC_API_SETTINGS.PATH,
 			method: 'POST',
 			headers: {
@@ -72,7 +85,11 @@ export const ToggleDeviceState = (config: PlatformConfig, processKeyNum: string)
 			}
 		};
 
+		platform.log.debug(`Starting ToggleDeviceState for process key: ${processKeyNum}`);
+
 		const req = http.request(postOptions, response => {
+			platform.log.debug(`response statusCode: ${response.statusCode}`);
+
 			if (response.statusCode === 200) {
 				// we need a slight delay to give the pool controller
 				// time to update its display

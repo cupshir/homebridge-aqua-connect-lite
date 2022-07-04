@@ -4,8 +4,7 @@ export const PLUGIN_NAME = 'homebridge-aqua-connect-lite';
 
 export const AC_API_SETTINGS = {
     PATH: "/WNewSt.htm",
-    UPDATE_LOCAL_SERVER_POST_BODY: 'Update Local Server&'
-}
+    UPDATE_LOCAL_SERVER_POST_BODY: 'Update Local Server&'}
 
 export const ACCESSORY_INFO = {
     LIGHT: {

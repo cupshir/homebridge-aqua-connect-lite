@@ -25,6 +25,8 @@ export class Light {
     }
 
     async setOn(value: CharacteristicValue) {
+        this.platform.log.debug('Starting setOn()');
+
         let toggleDevice = false;
 
         // check our device state to determine if we need to send the toggle request
@@ -32,7 +34,7 @@ export class Light {
         // before trying to toggle again, its annoying when homebridge state is opposite
         // the real state...
         await GetDeviceState(
-            this.platform.config,
+            this.platform,
             ACCESSORY_INFO.LIGHT.STATUS_KEY_INDEX)
         .then((deviceState) => {
             if ((deviceState === 'on' && this.currentState.On)
@@ -48,7 +50,7 @@ export class Light {
         if (toggleDevice) {
             // device is not in requested state, toggle it
             await ToggleDeviceState(
-                this.platform.config,
+                this.platform,
                 ACCESSORY_INFO.LIGHT.PROCESS_KEY_NUM)
             .then((response) => {
                 // due to the way aqua connect works, the response from the toggle
@@ -65,9 +67,11 @@ export class Light {
     }
 
     async getOn(): Promise<CharacteristicValue> {
+        this.platform.log.debug('Starting getOn()');
+
         // send request to get our device state
         await GetDeviceState(
-                this.platform.config,
+                this.platform,
                 ACCESSORY_INFO.LIGHT.STATUS_KEY_INDEX)
             .then((deviceState) => {
                 this.currentState.On = deviceState === 'on';

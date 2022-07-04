@@ -60,7 +60,7 @@ export class Light {
                 // is not helpful, we require another getOn request
                 // which homebridge will trigger after setOn is complete
                 // so we assume the toggle worked and getOn will correct it if needed
-                this.platform.log.error(`ToggleDeviceState response: ${response}`);
+                this.platform.log.debug(`ToggleDeviceState response: ${response}`);
 
                 this.currentState.On = !this.currentState.On;
 

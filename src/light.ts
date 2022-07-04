@@ -25,7 +25,8 @@ export class Light {
     }
 
     async setOn(value: CharacteristicValue) {
-        this.platform.log.debug('Starting setOn()');
+        this.platform.log.debug('Starting setOn');
+        this.platform.log.debug(`setOn currentState: ${this.currentState.On}`);
 
         let toggleDevice = false;
 
@@ -40,6 +41,8 @@ export class Light {
             if ((deviceState === 'on' && this.currentState.On)
                 || (deviceState === 'off' && !this.currentState.On)) {
                 toggleDevice = true;
+
+                this.platform.log.debug(`setOn toggleDevice: ${toggleDevice}`);
             } 
         })
         .catch((error) => {
@@ -57,7 +60,11 @@ export class Light {
                 // is not helpful, we require another getOn request
                 // which homebridge will trigger after setOn is complete
                 // so we assume the toggle worked and getOn will correct it if needed
+                this.platform.log.error(`ToggleDeviceState response: ${response}`);
+
                 this.currentState.On = !this.currentState.On;
+
+                this.platform.log.debug(`ToggleDeviceState finished. currentState: ${this.currentState.On}`);
             })
             .catch( (error) => {
                 this.platform.log.error(`Error toggling light device: ${error}`);
@@ -67,7 +74,8 @@ export class Light {
     }
 
     async getOn(): Promise<CharacteristicValue> {
-        this.platform.log.debug('Starting getOn()');
+        this.platform.log.debug('Starting getOn');
+        this.platform.log.debug(`get currentState: ${this.currentState.On}`);
 
         // send request to get our device state
         await GetDeviceState(
@@ -80,6 +88,8 @@ export class Light {
                 this.platform.log.error(`Error getting light device state: ${error}`);
                 throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
             });
+
+        this.platform.log.debug(`getOn finished. currentState: ${this.currentState.On}`);
             
         return this.currentState.On;
     }

@@ -8,7 +8,7 @@ export class Light {
     private service: Service;
 
     private currentState = {
-        On: true,
+        IsOn: true
     };
 
     constructor(
@@ -25,8 +25,8 @@ export class Light {
     }
 
     async setOn(value: CharacteristicValue) {
-        this.platform.log.debug('Starting setOn');
-        this.platform.log.debug(`setOn currentState: ${this.currentState.On}`);
+        this.platform.log.debug('--Starting setOn');
+        this.platform.log.debug(`--currentState.IsOn: ${this.currentState.IsOn}`);
 
         let toggleDevice = false;
 
@@ -38,59 +38,63 @@ export class Light {
             this.platform,
             ACCESSORY_INFO.LIGHT.STATUS_KEY_INDEX)
         .then((deviceState) => {
-            if ((deviceState === 'on' && this.currentState.On)
-                || (deviceState === 'off' && !this.currentState.On)) {
+            if ((deviceState === 'on' && this.currentState.IsOn)
+                || (deviceState === 'off' && !this.currentState.IsOn)) {
                 toggleDevice = true;
 
-                this.platform.log.debug(`setOn toggleDevice: ${toggleDevice}`);
+                this.platform.log.debug(`--toggleDevice: ${toggleDevice}`);
+
+                if (toggleDevice) {
+                    // device is not in requested state, toggle it
+                    ToggleDeviceState(
+                        this.platform,
+                        ACCESSORY_INFO.LIGHT.PROCESS_KEY_NUM)
+                    .then((message) => {
+                        // due to the way aqua connect works, the response from the toggle
+                        // is not helpful (i think its returning the current state of the 
+                        // LCD screen BEFORE the button press is executed, aka not helpful)
+                        // we will require another getOn request which homebridge will trigger
+                        // after setOn is complete, so we assume the toggle worked and getOn 
+                        // will correct it if needed
+                        this.platform.log.debug(`--ToggleDeviceState message: ${message}`);
+        
+                        this.currentState.IsOn = !this.currentState.IsOn;
+        
+                        this.platform.log.debug(`--ToggleDeviceState finished.`);
+                        this.platform.log.debug(`--currentState.IsOn: ${this.currentState.IsOn}`);
+                    })
+                    .catch( (error) => {                        
+                        this.platform.log.error(`--Error toggling light device: ${error}`);
+                        throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
+                    });
+                }   
             } 
         })
         .catch((error) => {
-            this.platform.log.error(`Error getting light device state: ${error}`);
+            this.platform.log.error(`--Error getting light device state: ${error}`);
             throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
         });
-
-        if (toggleDevice) {
-            // device is not in requested state, toggle it
-            await ToggleDeviceState(
-                this.platform,
-                ACCESSORY_INFO.LIGHT.PROCESS_KEY_NUM)
-            .then((response) => {
-                // due to the way aqua connect works, the response from the toggle
-                // is not helpful, we require another getOn request
-                // which homebridge will trigger after setOn is complete
-                // so we assume the toggle worked and getOn will correct it if needed
-                this.platform.log.debug(`ToggleDeviceState response: ${response}`);
-
-                this.currentState.On = !this.currentState.On;
-
-                this.platform.log.debug(`ToggleDeviceState finished. currentState: ${this.currentState.On}`);
-            })
-            .catch( (error) => {
-                this.platform.log.error(`Error toggling light device: ${error}`);
-                throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-            });
-        }        
     }
 
     async getOn(): Promise<CharacteristicValue> {
-        this.platform.log.debug('Starting getOn');
-        this.platform.log.debug(`get currentState: ${this.currentState.On}`);
+        this.platform.log.debug('-Starting getOn');
+        this.platform.log.debug(`-currentState.IsOn: ${this.currentState.IsOn}`);
 
         // send request to get our device state
         await GetDeviceState(
                 this.platform,
                 ACCESSORY_INFO.LIGHT.STATUS_KEY_INDEX)
             .then((deviceState) => {
-                this.currentState.On = deviceState === 'on';
+                this.currentState.IsOn = deviceState === 'on';
             })
             .catch((error) => {
-                this.platform.log.error(`Error getting light device state: ${error}`);
+                this.platform.log.error(`-Error getting light device state: ${error}`);
                 throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
             });
 
-        this.platform.log.debug(`getOn finished. currentState: ${this.currentState.On}`);
+        this.platform.log.debug(`-currentState.IsOn: ${this.currentState.IsOn}`);
+        this.platform.log.debug(`-getOn finished`);
             
-        return this.currentState.On;
+        return this.currentState.IsOn;
     }
 }

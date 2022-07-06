@@ -1,72 +1,50 @@
 import { AquaConnectLitePlatform } from './platform';
 
-import http from 'http';
+import axios from 'axios';
 import { parse } from 'node-html-parser';
 
 import { AC_API_SETTINGS } from './settings';
 
 export const GetDeviceState = (platform: AquaConnectLitePlatform, deviceKeyIndex: number): Promise<string> => {
 	return new Promise<string>((resolve, reject) => {
-		const postOptions = {
-			hostname: platform.config.bridge_ip_address,
-			path: AC_API_SETTINGS.PATH,
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/x-www-form-urlencoded',
-				'Content-Length': AC_API_SETTINGS.UPDATE_LOCAL_SERVER_POST_BODY.length,
-				'Connection': 'close',
-			}
-		};
-
-		platform.log.debug(`Starting GetDeviceState for device key index: ${deviceKeyIndex}`);
+		const body = AC_API_SETTINGS.UPDATE_LOCAL_SERVER_POST_BODY;
 		
-		// setup the request
-		const req = http.request(postOptions, response => {
-			platform.log.debug(`response statusCode: ${response.statusCode}`);
+		var config = {
+			method: 'post',
+			url: `http://${platform.config.bridge_ip_address}${AC_API_SETTINGS.PATH}`,
+			headers: { 
+			  'Content-Type': 'application/x-www-form-urlencoded', 
+			  'Content-Length': `${body.length}`, 
+			  'Connection': 'close'
+			},
+			data : body
+		  };
+		  
+		  axios(config)
+		  .then(function (response) {
+			platform.log.debug('Starting response processing');
+			platform.log.debug(`GetDeviceState - responseData: ${response.data}`);
 
-			if (response.statusCode === 200) {
-				// successfull response
-				platform.log.debug('Update Local Server request successful.')
+			// get the raw led status from the html response
+			const rawLedStatus = GetRawLedStatus(response.data);
+			platform.log.debug(`GetDeviceState - rawLEDStatus: ${rawLedStatus}`);
 
-				let responseData = '';
-		
-				// build responseData
-				response.on('data', (chunk) => {
-					responseData += chunk;
-				});
-				
-				// we have our response data now process it
-				response.on('end', () => {
-					platform.log.debug('Starting response processing');
-					platform.log.debug(`responseData: ${responseData}`);
-
-					// get the raw led status from the html response
-					const rawLedStatus = GetRawLedStatus(responseData);
-					platform.log.debug(`rawLEDStatus: ${rawLedStatus}`);
-
-					// convert the raw led status into ascii byte string
-					const asciiByteString = ConvertToAsciiByteString(rawLedStatus);
-					platform.log.debug(`asciiByteString: ${asciiByteString}`);
-			
-					// the ascii byte string has 24 bits that indicate the status
-					// of various led's on the controller
-					// using our device type, get the respective led status
-					const ledStatus = GetLedStatus(asciiByteString, deviceKeyIndex);
-					platform.log.debug(`ledStatus: ${ledStatus}`);
-
-					resolve(ledStatus);
-				});
-			}
-		});
-		
-		// return error
-		req.on('error', error => {
-			reject(`error: ${error}`);
-		});
+			// convert the raw led status into ascii byte string
+			const asciiByteString = ConvertToAsciiByteString(rawLedStatus);
+			platform.log.debug(`GetDeviceState - asciiByteString: ${asciiByteString}`);
 	
-		// send request
-		req.write(AC_API_SETTINGS.UPDATE_LOCAL_SERVER_POST_BODY);
-		req.end();
+			// the ascii byte string has 24 bits that indicate the status
+			// of various led's on the controller
+			// using our device key index, get the respective led status
+			const ledStatus = GetLedStatus(asciiByteString, deviceKeyIndex);
+			platform.log.debug(`GetDeviceState - ledStatus: ${ledStatus}`);
+
+			resolve(ledStatus);
+		  })
+		  .catch(function (error) {
+			console.log(error);
+			reject(error);
+		  });
 	});
 };
 
@@ -74,39 +52,26 @@ export const ToggleDeviceState = (platform: AquaConnectLitePlatform, processKeyN
 	return new Promise<string>((resolve,reject) => {
 		const body = "KeyId=" + processKeyNum + "&";
 
-		const postOptions = {
-			hostname: platform.config.bridge_ip_address,
-			path: AC_API_SETTINGS.PATH,
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/x-www-form-urlencoded',
-				'Content-Length': body.length,
-				'Connection': 'close',
-			}
-		};
-
-		platform.log.debug(`Starting ToggleDeviceState for process key: ${processKeyNum}`);
-
-		const req = http.request(postOptions, response => {
-			platform.log.debug(`response statusCode: ${response.statusCode}`);
-
-			if (response.statusCode === 200) {
-				// we need a slight delay to give the pool controller
-				// time to update its display
-				//setTimeout(function() {
-					resolve('success');
-				//}, 300);
-			}
-		});
-
-		// return error
-		req.on('error', error => {
-			reject(`toggleDeviceStateError: ${error}`)
-		});
-
-		// send request
-		req.write(body);
-		req.end();
+		var config = {
+			method: 'post',
+			url: `http://${platform.config.bridge_ip_address}${AC_API_SETTINGS.PATH}`,
+			headers: { 
+			  'Content-Type': 'application/x-www-form-urlencoded', 
+			  'Content-Length': `${body.length}`, 
+			  'Connection': 'close'
+			},
+			data : body
+		  };
+		  
+		  axios(config)
+		  .then(function (response) {
+			platform.log.debug(`ToggleDeviceState - responseData: ${response.data}`);
+			resolve('success');
+		  })
+		  .catch(function (error) {
+			console.log(error);
+			reject(error);
+		  });
 	});
 };
 

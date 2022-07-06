@@ -62,7 +62,7 @@ export const ToggleDeviceState = (platform: AquaConnectLitePlatform, processKeyN
 			},
 			data : body
 		};
-		  
+		
 		axios(config)
 			.then(function (response) {
 				platform.log.debug(`ToggleDeviceState - responseData: ${response.data}`);

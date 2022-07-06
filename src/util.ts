@@ -9,42 +9,42 @@ export const GetDeviceState = (platform: AquaConnectLitePlatform, deviceKeyIndex
 	return new Promise<string>((resolve, reject) => {
 		const body = AC_API_SETTINGS.UPDATE_LOCAL_SERVER_POST_BODY;
 		
-		var config = {
+		const config = {
 			method: 'post',
 			url: `http://${platform.config.bridge_ip_address}${AC_API_SETTINGS.PATH}`,
 			headers: { 
-			  'Content-Type': 'application/x-www-form-urlencoded', 
-			  'Content-Length': `${body.length}`, 
-			  'Connection': 'close'
+				'Content-Type': 'application/x-www-form-urlencoded', 
+				'Content-Length': `${body.length}`, 
+				'Connection': 'close'
 			},
 			data : body
-		  };
-		  
-		  axios(config)
-		  .then(function (response) {
-			platform.log.debug('Starting response processing');
-			platform.log.debug(`GetDeviceState - responseData: ${response.data}`);
+		};
+			
+		axios(config)
+			.then(function (response) {
+				platform.log.debug('Starting response processing');
+				platform.log.debug(`GetDeviceState - responseData: ${response.data}`);
 
-			// get the raw led status from the html response
-			const rawLedStatus = GetRawLedStatus(response.data);
-			platform.log.debug(`GetDeviceState - rawLEDStatus: ${rawLedStatus}`);
+				// get the raw led status from the html response
+				const rawLedStatus = GetRawLedStatus(response.data);
+				platform.log.debug(`GetDeviceState - rawLEDStatus: ${rawLedStatus}`);
 
-			// convert the raw led status into ascii byte string
-			const asciiByteString = ConvertToAsciiByteString(rawLedStatus);
-			platform.log.debug(`GetDeviceState - asciiByteString: ${asciiByteString}`);
-	
-			// the ascii byte string has 24 bits that indicate the status
-			// of various led's on the controller
-			// using our device key index, get the respective led status
-			const ledStatus = GetLedStatus(asciiByteString, deviceKeyIndex);
-			platform.log.debug(`GetDeviceState - ledStatus: ${ledStatus}`);
+				// convert the raw led status into ascii byte string
+				const asciiByteString = ConvertToAsciiByteString(rawLedStatus);
+				platform.log.debug(`GetDeviceState - asciiByteString: ${asciiByteString}`);
 
-			resolve(ledStatus);
-		  })
-		  .catch(function (error) {
-			console.log(error);
-			reject(error);
-		  });
+				// the ascii byte string has 24 bits that indicate the status
+				// of various led's on the controller
+				// using our device key index, get the respective led status
+				const ledStatus = GetLedStatus(asciiByteString, deviceKeyIndex);
+				platform.log.debug(`GetDeviceState - ledStatus: ${ledStatus}`);
+
+				resolve(ledStatus);
+			})
+			.catch(function (error) {
+				console.log(error);
+				reject(error);
+			});
 	});
 };
 
@@ -52,26 +52,26 @@ export const ToggleDeviceState = (platform: AquaConnectLitePlatform, processKeyN
 	return new Promise<string>((resolve,reject) => {
 		const body = "KeyId=" + processKeyNum + "&";
 
-		var config = {
+		const config = {
 			method: 'post',
 			url: `http://${platform.config.bridge_ip_address}${AC_API_SETTINGS.PATH}`,
 			headers: { 
-			  'Content-Type': 'application/x-www-form-urlencoded', 
-			  'Content-Length': `${body.length}`, 
-			  'Connection': 'close'
+				'Content-Type': 'application/x-www-form-urlencoded', 
+				'Content-Length': `${body.length}`, 
+				'Connection': 'close'
 			},
 			data : body
-		  };
+		};
 		  
-		  axios(config)
-		  .then(function (response) {
-			platform.log.debug(`ToggleDeviceState - responseData: ${response.data}`);
-			resolve('success');
-		  })
-		  .catch(function (error) {
-			console.log(error);
-			reject(error);
-		  });
+		axios(config)
+			.then(function (response) {
+				platform.log.debug(`ToggleDeviceState - responseData: ${response.data}`);
+				resolve('success');
+			})
+			.catch(function (error) {
+				console.log(error);
+				reject(error);
+			});
 	});
 };
 

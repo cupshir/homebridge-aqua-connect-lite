@@ -3,7 +3,7 @@ import { Service, PlatformAccessory, CharacteristicValue } from 'homebridge';
 import { AquaConnectLitePlatform } from './platform';
 import { GetDeviceState, ToggleDeviceState } from './util'
 
-export class Light {
+export class Switch {
     private service: Service;
 
     private currentState = {
@@ -14,7 +14,7 @@ export class Light {
         private readonly platform: AquaConnectLitePlatform,
         private readonly accessory: PlatformAccessory) {
 
-        this.service = this.accessory.getService(this.platform.Service.Lightbulb) || this.accessory.addService(this.platform.Service.Lightbulb);
+        this.service = this.accessory.getService(this.platform.Service.Switch) || this.accessory.addService(this.platform.Service.Switch);
 
         this.service.setCharacteristic(this.platform.Characteristic.Name, this.accessory.displayName);
 
@@ -35,11 +35,11 @@ export class Light {
             this.platform,
             this.accessory.context.device.STATUS_KEY_INDEX)
         .then((deviceState) => {
-            if ((deviceState === 'on' && this.currentState.IsOn)
+            if ((deviceState === 'on' && this.currentState.IsOn) 
                 || (deviceState === 'off' && !this.currentState.IsOn)) {
+                // device is not in requested state, toggle it
                 this.platform.log.debug(`--${this.accessory.displayName} toggling device state`);
 
-                // device is not in requested state, toggle it
                 ToggleDeviceState(
                     this.platform,
                     this.accessory.context.device.PROCESS_KEY_NUM)
@@ -61,7 +61,6 @@ export class Light {
                     this.platform.log.error(`--Error toggling ${this.accessory.displayName} device state: ${error}`);
                     throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
                 });
-                 
             } 
         })
         .catch((error) => {
@@ -71,7 +70,7 @@ export class Light {
     }
 
     async getOn(): Promise<CharacteristicValue> {
-        this.platform.log.debug(`-${this.accessory.displayName} Starting getOn`);
+        this.platform.log.debug(`-Starting ${this.accessory.displayName} getOn`);
         this.platform.log.debug(`-${this.accessory.displayName} currentState.IsOn: ${this.currentState.IsOn}`);
 
         // send request to get our device state

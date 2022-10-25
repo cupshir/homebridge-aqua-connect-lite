@@ -5,9 +5,9 @@ I spent some time analyzing the Aqua Connect Home Network Device web app and det
 
 My pool hardware setup is a Hayward E-Command 4, Pro Logic P4, and an Aqua Connect Home Network Device. 
 
-The first iteration of this plugin will only offer support for controlling the pool light.  The next iteration will add support for the filter, aux1, and aux2.  I do not have a spa or heater, so there is no plan to add support for those since I can not test them.
+This second iteration of the plugin will offer support for controlling the pool light, aux 1, and aux 2.  The next iteration will add support for the filter.  I do not have a spa or heater, so there is no plan to add support for those since I can not test them. 
 
-Also, there is no plan to expose navigating the menu's to change settings on the controller.  I just want to be able to turn on/off my pool light and eventually my water feature with my landscape lights via Homebridge :-).
+Also, there is no plan to expose navigating the menu's to change settings on the controller.  I just want to be able to turn on/off my pool light with my landscape lights and control my water feature via Homebridge :-).
 
 ### This plugin requires Homebridge
 Ensure you have Homebridge installed and running before trying to use this plugin.  Refer to the [Homebridge wiki](https://github.com/homebridge/homebridge/wiki) for setup instructions.

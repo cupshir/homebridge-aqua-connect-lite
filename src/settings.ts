@@ -28,13 +28,13 @@ export const ACCESSORIES = [
     {
         NAME: ACCESSORY_NAME.AUXONE,
         TYPE: ACCESSORY_TYPE.SWITCH,
-        PROCESS_KEY_NUM: '09',
-        STATUS_KEY_INDEX: 4
+        PROCESS_KEY_NUM: '0A',
+        STATUS_KEY_INDEX: 9
     },
     {
         NAME: ACCESSORY_NAME.AUXTWO,
         TYPE: ACCESSORY_TYPE.SWITCH,
-        PROCESS_KEY_NUM: '09',
-        STATUS_KEY_INDEX: 4
+        PROCESS_KEY_NUM: '0B',
+        STATUS_KEY_INDEX: 10
     }
 ];

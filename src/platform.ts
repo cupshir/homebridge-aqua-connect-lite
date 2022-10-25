@@ -42,6 +42,9 @@ export class AquaConnectLitePlatform implements DynamicPlatformPlugin {
             if (existingAccessory) {
                 // the accessory already exists
                 this.log.info('Restoring existing accessory from cache:', existingAccessory.displayName);
+
+                // add the accessory info to context
+                existingAccessory.context.device = accessory;
         
                 this.api.updatePlatformAccessories([existingAccessory]);
 
@@ -62,6 +65,7 @@ export class AquaConnectLitePlatform implements DynamicPlatformPlugin {
                 // create a new accessory
                 const newAccessory = new this.api.platformAccessory(accessory.NAME, uuid);
 
+                // add the accessory info to context
                 newAccessory.context.device = accessory;
 
                 switch (accessory.TYPE) {

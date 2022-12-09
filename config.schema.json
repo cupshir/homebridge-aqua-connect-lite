@@ -10,6 +10,20 @@
                 "title": "Bridge Ip Address",
                 "type": "string",
                 "required": true
+            },
+            "exclude_accessories": {
+                "title": "Exclude Accessories",
+                "type": "array",
+                "uniqueItems": true,
+                "items": {
+                    "title": "Accessory",
+                    "type": "string",
+                    "enum": [
+                        "Pool Light",
+                        "Aux 1",
+                        "Aux 2"
+                    ]
+                }
             }
         }
     }

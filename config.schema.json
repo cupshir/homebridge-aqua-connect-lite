@@ -13,6 +13,7 @@
             },
             "exclude_accessories": {
                 "title": "Exclude Accessories",
+                "description": "An excluded accessory will not be added to Homebridge. If the accessory was previously added, it will be removed.",
                 "type": "array",
                 "uniqueItems": true,
                 "items": {

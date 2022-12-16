@@ -22,27 +22,25 @@ export const GetDeviceState = (platform: AquaConnectLitePlatform, deviceKeyIndex
 			
 		axios(config)
 			.then(function (response) {
-				platform.log.debug('Starting response processing');
-				platform.log.debug(`GetDeviceState - responseData: ${response.data}`);
+				platform.log.debug(`${deviceKeyIndex} GetDeviceState - responseData: ${response.data}`);
 
 				// get the raw led status from the html response
 				const rawLedStatus = GetRawLedStatus(response.data);
-				platform.log.debug(`GetDeviceState - rawLEDStatus: ${rawLedStatus}`);
+				platform.log.debug(`${deviceKeyIndex} GetDeviceState - rawLEDStatus: ${rawLedStatus}`);
 
 				// convert the raw led status into ascii byte string
 				const asciiByteString = ConvertToAsciiByteString(rawLedStatus);
-				platform.log.debug(`GetDeviceState - asciiByteString: ${asciiByteString}`);
+				platform.log.debug(`${deviceKeyIndex} GetDeviceState - asciiByteString: ${asciiByteString}`);
 
 				// the ascii byte string has 24 bits that indicate the status
 				// of various led's on the controller
 				// using our device key index, get the respective led status
 				const ledStatus = GetLedStatus(asciiByteString, deviceKeyIndex);
-				platform.log.debug(`GetDeviceState - ledStatus: ${ledStatus}`);
+				platform.log.debug(`${deviceKeyIndex} GetDeviceState - ledStatus: ${ledStatus}`);
 
 				resolve(ledStatus);
 			})
 			.catch(function (error) {
-				console.log(error);
 				reject(error);
 			});
 	});
@@ -65,11 +63,10 @@ export const ToggleDeviceState = (platform: AquaConnectLitePlatform, processKeyN
 		
 		axios(config)
 			.then(function (response) {
-				platform.log.debug(`ToggleDeviceState - responseData: ${response.data}`);
+				platform.log.debug(`${processKeyNum} ToggleDeviceState - responseData: ${response.data}`);
 				resolve('success');
 			})
 			.catch(function (error) {
-				console.log(error);
 				reject(error);
 			});
 	});

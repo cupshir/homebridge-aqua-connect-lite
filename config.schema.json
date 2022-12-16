@@ -10,6 +10,21 @@
                 "title": "Bridge Ip Address",
                 "type": "string",
                 "required": true
+            },
+            "exclude_accessories": {
+                "title": "Exclude Accessories",
+                "description": "An excluded accessory will not be added to Homebridge. If the accessory was previously added, it will be removed.",
+                "type": "array",
+                "uniqueItems": true,
+                "items": {
+                    "title": "Accessory",
+                    "type": "string",
+                    "enum": [
+                        "Pool Light",
+                        "Aux 1",
+                        "Aux 2"
+                    ]
+                }
             }
         }
     }

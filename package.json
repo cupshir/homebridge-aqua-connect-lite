@@ -1,7 +1,7 @@
 {
   "displayName": "Aqua Connect Lite",
   "name": "homebridge-aqua-connect-lite",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Basic Control of your pool using Aqua Connect. Currently only supports the Light, Aux1, and Aux2.",
   "license": "Apache-2.0",
   "repository": {

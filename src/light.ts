@@ -27,7 +27,10 @@ export class Light {
 
     async setOn(value: CharacteristicValue) {
         this.platform.log.debug('---------------------------');
-        this.platform.log.debug(`${this.accessory.displayName} starting setOn. currentState.IsOn: ${this.currentState.IsOn}; currentState.ToggleInProgress: ${this.currentState.ToggleInProgress}`);
+        this.platform.log.debug(`${this.accessory.displayName} starting setOn. 
+            currentState.IsOn: ${this.currentState.IsOn}; 
+            currentState.ToggleInProgress: ${this.currentState.ToggleInProgress};
+            newState: ${value === true ? 'on' : 'off'}`);
 
         if (this.currentState.ToggleInProgress) {
             this.platform.log.debug(`${this.accessory.displayName} device toggle is in progress, setOn request ignored.`);
@@ -42,15 +45,20 @@ export class Light {
             this.platform,
             this.accessory.context.device.STATUS_KEY_INDEX)
         .then((deviceState) => {
-            if ((deviceState === 'on' && this.currentState.IsOn)
-                || (deviceState === 'off' && !this.currentState.IsOn)) {
-                this.platform.log.debug(`${this.accessory.displayName} starting toggle device state. deviceState: ${deviceState}`);
+            const isDeviceOn = deviceState === 'on';
+            const isStateInSync = isDeviceOn === value;
+
+            this.platform.log.debug(`${this.accessory.displayName} setOn GetDeviceState complete. 
+                deviceState: ${deviceState};
+                isStateInSync: ${isStateInSync}`);
+
+            if (!isStateInSync) {
+                this.platform.log.debug(`${this.accessory.displayName} starting toggle device state.`);
 
                 this.currentState.ToggleInProgress = true;
                 // expected toggle state is used to for a more responsive UI feel
                 // if toggle is in progress, getOn will return the expected toggle state
-                // we assume the expected toggle state is opposite of the current isOn state
-                this.currentState.ExpectedToggleState = !this.currentState.IsOn;
+                this.currentState.ExpectedToggleState = value === true;
 
                 ToggleDeviceState(
                     this.platform,
@@ -62,7 +70,7 @@ export class Light {
                     // we will require another getOn request which homebridge will trigger
                     // after setOn is complete, so we assume the toggle worked and getOn 
                     // will correct it if needed    
-                    this.currentState.IsOn = !this.currentState.IsOn;
+                    this.currentState.IsOn = value === true;
                     this.currentState.ToggleInProgress = false;
     
                     this.platform.log.debug(`${this.accessory.displayName} ToggleDeviceState success. message: ${message}`);

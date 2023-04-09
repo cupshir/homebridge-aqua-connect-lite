@@ -1,8 +1,8 @@
 {
-  "displayName": "Aqua Connect Lite - TEST",
-  "name": "homebridge-aqua-connect-lite-test",
-  "version": "1.2.1.1",
-  "description": "Basic Control of your pool using Aqua Connect. Currently only supports the Light, Aux1, and Aux2. plus new features",
+  "displayName": "Aqua Connect Lite",
+  "name": "homebridge-aqua-connect-lite",
+  "version": "1.2.2",
+  "description": "Basic Control of your pool using Aqua Connect. Currently only supports the Light, Aux1, and Aux2. Heater and Spa Mode now in test",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",

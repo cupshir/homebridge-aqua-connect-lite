@@ -9,6 +9,8 @@ The next iteration will add support for the pool and air temperatures. Controlli
 
 Also, there is no plan to expose navigating the menu's to change settings on the controller.  I just want to be able to turn on/off my pool light with my landscape lights and control my water feature via Homebridge :-).
 
+Version 1.2.2 include Heater and Spa Mode funcitonality in early test
+
 ### This plugin requires Homebridge
 Ensure you have Homebridge installed and running before trying to use this plugin.  Refer to the [Homebridge wiki](https://github.com/homebridge/homebridge/wiki) for setup instructions.
 
@@ -61,7 +63,9 @@ Accessories available for exclusion are...
 
 "Pool Light",
 "Aux 1",
-"Aux 2"
+"Aux 2",
+"Heater",
+"Spa Mode"
 
 ## Troubleshooting
 Im making a bit of an assumption that the key indexes and web process key's are the same across all Pro Logic P4 controllers connected to Aqua Connect. If these settings are not the same, it will cause the plugin to behave unexpectedly and either not work or turn on and off incorrect pool functions. If this happens in your setup, open an issue [here.](https://github.com/cupshir/homebridge-aqua-connect-lite/issues) and I will add in some override settings.

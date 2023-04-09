@@ -22,7 +22,9 @@
                     "enum": [
                         "Pool Light",
                         "Aux 1",
-                        "Aux 2"
+                        "Aux 2",
+                        "Heater",
+                        "Spa Mode"
                     ]
                 }
             }

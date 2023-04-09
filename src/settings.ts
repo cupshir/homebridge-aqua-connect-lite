@@ -15,7 +15,9 @@ export const ACCESSORY_TYPE = {
 const ACCESSORY_NAME = {
     LIGHT: 'Pool Light',
     AUXONE: 'Aux 1',
-    AUXTWO: 'Aux 2'
+    AUXTWO: 'Aux 2',
+    HEATER: 'Heater',
+    SPAMODE: 'Spa Mode'
 };
 
 export const ACCESSORIES = [
@@ -36,5 +38,17 @@ export const ACCESSORIES = [
         TYPE: ACCESSORY_TYPE.SWITCH,
         PROCESS_KEY_NUM: '0B',
         STATUS_KEY_INDEX: 10
-    }
+    },
+    {
+        NAME: ACCESSORY_NAME.HEATER,
+        TYPE: ACCESSORY_TYPE.SWITCH,
+        PROCESS_KEY_NUM: '13',
+        STATUS_KEY_INDEX: 6
+    },
+    {
+        NAME: ACCESSORY_NAME.SPAMODE,
+        TYPE: ACCESSORY_TYPE.SWITCH,
+        PROCESS_KEY_NUM: '07',
+        STATUS_KEY_INDEX: 1
+    {
 ];

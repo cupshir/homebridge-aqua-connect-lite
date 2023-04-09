@@ -50,5 +50,5 @@ export const ACCESSORIES = [
         TYPE: ACCESSORY_TYPE.SWITCH,
         PROCESS_KEY_NUM: '07',
         STATUS_KEY_INDEX: 1
-    {
+    }
 ];

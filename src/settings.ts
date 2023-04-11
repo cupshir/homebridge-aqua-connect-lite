@@ -9,13 +9,15 @@ export const AC_API_SETTINGS = {
 
 export const ACCESSORY_TYPE = {
     LIGHT: 'light',
-    SWITCH: 'switch'
+    SWITCH: 'switch',
+    TEMPERATURE: 'temperature'
 };
 
 const ACCESSORY_NAME = {
     LIGHT: 'Pool Light',
     AUXONE: 'Aux 1',
-    AUXTWO: 'Aux 2'
+    AUXTWO: 'Aux 2',
+    POOLTEMP: 'Pool Temp'
 };
 
 export const ACCESSORIES = [
@@ -36,5 +38,11 @@ export const ACCESSORIES = [
         TYPE: ACCESSORY_TYPE.SWITCH,
         PROCESS_KEY_NUM: '0B',
         STATUS_KEY_INDEX: 10
+    },
+    {
+        NAME: ACCESSORY_NAME.POOLTEMP,
+        TYPE: ACCESSORY_TYPE.TEMPERATURE,
+        PROCESS_KEYNUM: '',
+        STATUS_KEY_INDEX: -1
     }
 ];

@@ -5,6 +5,64 @@ import { parse } from 'node-html-parser';
 
 import { AC_API_SETTINGS } from './settings';
 
+export const  GetPoolTemp = async (platform: AquaConnectLitePlatform): Promise<string> => {
+
+	let currentTemp = '';
+	let attempt = 0;
+	while (attempt < 5) {
+		attempt++;
+		currentTemp = await RequestPoolTemp(platform);
+
+		if (currentTemp.includes('Air Temp')) {
+			break;
+		}
+
+		platform.log.debug('Waiting 1 s');
+		await new Promise(resolve => setTimeout(resolve, 1000));
+	}
+
+	if (!currentTemp) {
+		return '';
+	}
+
+	// todo parse temp
+
+	return currentTemp;
+}
+
+export const RequestPoolTemp = (platform: AquaConnectLitePlatform): Promise<string> => {
+	return new Promise<string>((resolve, reject) => {
+		const body = AC_API_SETTINGS.UPDATE_LOCAL_SERVER_POST_BODY;
+		
+		const config = {
+			method: 'post',
+			url: `http://${platform.config.bridge_ip_address}${AC_API_SETTINGS.PATH}`,
+			headers: { 
+				'Content-Type': 'application/x-www-form-urlencoded', 
+				'Content-Length': `${body.length}`, 
+				'Connection': 'close'
+			},
+			data : body
+		};
+			
+		axios(config)
+			.then(function (response) {
+				platform.log.debug(response.data);
+
+				const lcdResults = parse(response.data);
+
+				const splitResults = lcdResults.querySelector('body')?.text.split('xxx');
+			
+				if (splitResults && splitResults.length >= 0) {
+					resolve(splitResults[0].trim().toString());
+				}
+			})
+			.catch(function (error) {
+				reject(error);
+			});
+	});
+};
+
 export const GetDeviceState = (platform: AquaConnectLitePlatform, deviceKeyIndex: number): Promise<string> => {
 	return new Promise<string>((resolve, reject) => {
 		const body = AC_API_SETTINGS.UPDATE_LOCAL_SERVER_POST_BODY;

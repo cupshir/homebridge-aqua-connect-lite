@@ -3,6 +3,7 @@ import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, 
 import { PLATFORM_NAME, PLUGIN_NAME, ACCESSORY_TYPE, ACCESSORIES } from './settings';
 import { Light } from './light';
 import { Switch } from './switch';
+import { Temperature } from './temperature';
 
 /**
  * HomebridgePlatform
@@ -57,16 +58,7 @@ export class AquaConnectLitePlatform implements DynamicPlatformPlugin {
                 existingAccessory.context.device = accessory;        
                 this.api.updatePlatformAccessories([existingAccessory]);
 
-                switch (accessory.TYPE) {
-                    case ACCESSORY_TYPE.LIGHT:
-                        new Light(this, existingAccessory);
-                        break;
-                    case ACCESSORY_TYPE.SWITCH:
-                        new Switch(this, existingAccessory);
-                        break;
-                    default:
-                        break;
-                }
+                this.initializeAccessory(this, existingAccessory, accessory.TYPE)
 
                 this.log.debug(`${existingAccessory.displayName} restored from cache.`);
             } else {
@@ -80,21 +72,30 @@ export class AquaConnectLitePlatform implements DynamicPlatformPlugin {
                 const newAccessory = new this.api.platformAccessory(accessory.NAME, uuid);
                 newAccessory.context.device = accessory;
 
-                switch (accessory.TYPE) {
-                    case ACCESSORY_TYPE.LIGHT:
-                        new Light(this, newAccessory);
-                        break;
-                    case ACCESSORY_TYPE.SWITCH:
-                        new Switch(this, newAccessory);
-                        break;
-                    default:
-                        break;
-                }
+                this.initializeAccessory(this, newAccessory, accessory.TYPE)
         
                 this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [newAccessory]);
 
                 this.log.debug(`${accessory.NAME} added.`);
             }  
         }            
+    }
+
+    initializeAccessory(platform: AquaConnectLitePlatform, accessory: PlatformAccessory, accessoryType: string) {
+        switch (accessoryType) {
+            case ACCESSORY_TYPE.LIGHT:
+                new Light(platform, accessory);
+                break;
+            case ACCESSORY_TYPE.SWITCH:
+                new Switch(platform, accessory);
+                break;
+            case ACCESSORY_TYPE.TEMPERATURE:
+                new Temperature(platform, accessory);
+                break;
+            default:
+                break;
+        }
+
+        return;
     }
 }

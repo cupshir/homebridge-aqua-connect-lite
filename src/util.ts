@@ -83,13 +83,8 @@ const getResponse = async (platform: AquaConnectLitePlatform, requester: string,
 				platform.requestInProgress = false;
 			})
 			.catch((error) => {
-
-
-
-				// TODO: error handling.....
-
-
-
+				platform.log.debug(`${logTitle} GetDeviceState failed. Error: ${error}`);
+				
 				platform.requestInProgress = false;
 				response = '';
 			});

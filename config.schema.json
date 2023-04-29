@@ -6,14 +6,53 @@
         "title": "Aqua Connect Lite Plugin",
         "type": "object",
         "properties": {
+            "disclaimer": {
+                "title": "Disclaimer",
+                "description": "By selecting this box, I AGREE that this plugin is provided as is and is not guarenteed to work with my system. The author and/or contributors are not responsible for any damage or ill effects caused by using this plugin.",
+                "type": "boolean"
+            },
             "bridge_ip_address": {
                 "title": "Bridge Ip Address",
+                "format": "ipv4",
                 "type": "string",
-                "required": true
+                "required": true,
+                "condition": {
+                    "functionBody": "return model.disclaimer === true;"
+                }
             },
-            "exclude_accessories": {
-                "title": "Exclude Accessories",
-                "description": "An excluded accessory will not be added to Homebridge. If the accessory was previously added, it will be removed.",
+            "get_cache_threshold": {
+                "title": "Get Request Cache Threshold",
+                "description": "The amount of time to cache the get response. Get requests will use the cached response until this threshold has been passed, then it will get a new response.",
+                "type": "integer",
+                "default": 1000,
+                "required": true,
+                "condition": {
+                    "functionBody": "return model.disclaimer === true;"
+                }
+            },
+            "get_delay": {
+                "title": "Get Request Delay",
+                "description": "The amount of time to delay in between get requests. This is used to prevent Homebridge from flooding the Aqua Connect bridge.",
+                "type": "integer",
+                "default": 100,
+                "required": true,
+                "condition": {
+                    "functionBody": "return model.disclaimer === true;"
+                }
+            },
+            "set_delay": {
+                "title": "Set Request Delay",
+                "description": "The amount of time to delay in between set requests. The Aqua Connect bridge will not respond to requests that are to close together.",
+                "type": "integer",
+                "default": 500,
+                "required": true,
+                "condition": {
+                    "functionBody": "return model.disclaimer === true;"
+                }
+            },
+            "include_accessories": {
+                "title": "Include Accessories",
+                "description": "Select the accessories that you want to use.",
                 "type": "array",
                 "uniqueItems": true,
                 "items": {
@@ -24,8 +63,14 @@
                         "Aux 1",
                         "Aux 2",
                         "Heater",
-                        "Spa Mode"
+                        "Spa",
+                        "Pool",
+                        "Spillover"
                     ]
+                },
+                "required": true,
+                "condition": {
+                    "functionBody": "return model.disclaimer === true;"
                 }
             }
         }

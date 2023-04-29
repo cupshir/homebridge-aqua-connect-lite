@@ -3,6 +3,7 @@ import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, 
 import { PLATFORM_NAME, PLUGIN_NAME, ACCESSORY_TYPE, ACCESSORIES } from './settings';
 import { Light } from './light';
 import { Switch } from './switch';
+import { ModeSwitch } from './mode_switch';
 
 /**
  * HomebridgePlatform
@@ -13,14 +14,83 @@ export class AquaConnectLitePlatform implements DynamicPlatformPlugin {
 
     public readonly accessories: PlatformAccessory[] = [];
 
+    public lastRequest: number;
+    public requestInProgress: boolean;
+    public lastResponse: string;
+
+    public modeToggleInProgress: boolean;
+    public currentMode: string;
+    public expectedMode: string;
+
     constructor(
         public readonly log: Logger,
         public readonly config: PlatformConfig,
         public readonly api: API) {
         
+        this.lastRequest = Date.now();
+        this.requestInProgress = false;
+        this.lastResponse = '';
+
+
+        this.modeToggleInProgress = false;
+        this.currentMode = '';
+        this.expectedMode = '';
+
         this.api.on('didFinishLaunching', () => {
-            this.discoverAccessories();
+            if (!this.config.disclaimer) {
+                this.log.error('Accept Disclaimer to enable this plugin.');
+                return;
+            }
+
+            if (!this.config.bridge_ip_address || !this.config.include_accessories || this.config.include_accessories.length === 0) {
+                this.log.error('Missing required settings. Update the settings and restart Homebridge.');
+                return;
+            }
+
+            this.loadAccessories();
         });
+    }
+
+    loadAccessories() {
+        for (const accessoryConfig of ACCESSORIES) {
+            this.log.debug(`-------------${accessoryConfig.NAME} discover started-------------`);
+
+            let includeAccessory = false;            
+            if (this.config.include_accessories && this.config.include_accessories.includes(accessoryConfig.NAME)) {
+                includeAccessory = true;
+            }
+
+            const uuid = this.api.hap.uuid.generate((PLATFORM_NAME + accessoryConfig.NAME + accessoryConfig.TYPE));
+            let accessory = this.accessories.find(a => a.UUID === uuid);
+
+            if (!includeAccessory) {
+                if (accessory) {
+                    this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME,[accessory]);
+                    this.log.debug(`${accessoryConfig.NAME} unregistered.`);
+                }
+
+                this.log.debug(`${accessoryConfig.NAME} excluded.`);
+                continue;
+            }
+
+            let newAccessory = false;
+            if (!accessory) {
+                accessory = new this.api.platformAccessory(accessoryConfig.NAME, uuid);
+                newAccessory = true;
+            }
+
+            accessory.context.deviceConfig = accessoryConfig;
+
+            this.initializeAccessory(this, accessory, accessoryConfig.TYPE);
+            
+            if (!newAccessory) {
+                this.api.updatePlatformAccessories([accessory]);
+                this.log.debug(`${accessory.displayName} restored from cache.`);
+            } else {
+                this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
+                this.log.debug(`${accessory.displayName} added.`);
+            }
+        }            
     }
 
     configureAccessory(accessory: PlatformAccessory) {
@@ -29,72 +99,21 @@ export class AquaConnectLitePlatform implements DynamicPlatformPlugin {
         }
     }
 
-    discoverAccessories() {
-        for (const accessory of ACCESSORIES) {
-            this.log.debug('---------------------------');
-            this.log.debug(`${accessory.NAME} discover started.`);
+    initializeAccessory(platform: AquaConnectLitePlatform, accessory: PlatformAccessory, accessoryType: string) {
+        switch (accessoryType) {
+            case ACCESSORY_TYPE.LIGHT:
+                new Light(platform, accessory);
+                break;
+            case ACCESSORY_TYPE.SWITCH:
+                new Switch(platform, accessory);
+                break;
+            case ACCESSORY_TYPE.MODESWITCH:
+                new ModeSwitch(platform, accessory);
+                break;
+            default:
+                break;
+        }
 
-            let excludeAccessory = false;            
-            if (this.config.exclude_accessories && this.config.exclude_accessories.includes(accessory.NAME)) {
-                excludeAccessory = true;
-            }
-
-            const uuid = this.api.hap.uuid.generate((PLATFORM_NAME + accessory.NAME + accessory.TYPE));
-            const existingAccessory = this.accessories.find(a => a.UUID === uuid);
-
-            if (existingAccessory) {
-                // if an accessory was included previously, but now excluded
-                // we need to remove it from the platform
-                if (excludeAccessory) {
-                    this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME,[existingAccessory]);
-
-                    this.log.debug(`${accessory.NAME} excluded and unregistered.`);
-
-                    // skip to next accessory
-                    continue;
-                }
-
-                existingAccessory.context.device = accessory;        
-                this.api.updatePlatformAccessories([existingAccessory]);
-
-                switch (accessory.TYPE) {
-                    case ACCESSORY_TYPE.LIGHT:
-                        new Light(this, existingAccessory);
-                        break;
-                    case ACCESSORY_TYPE.SWITCH:
-                        new Switch(this, existingAccessory);
-                        break;
-                    default:
-                        break;
-                }
-
-                this.log.debug(`${existingAccessory.displayName} restored from cache.`);
-            } else {
-                if (excludeAccessory) {
-                    this.log.debug(`${accessory.NAME} excluded.`);
-
-                    // skip to next accessory
-                    continue;
-                }
-        
-                const newAccessory = new this.api.platformAccessory(accessory.NAME, uuid);
-                newAccessory.context.device = accessory;
-
-                switch (accessory.TYPE) {
-                    case ACCESSORY_TYPE.LIGHT:
-                        new Light(this, newAccessory);
-                        break;
-                    case ACCESSORY_TYPE.SWITCH:
-                        new Switch(this, newAccessory);
-                        break;
-                    default:
-                        break;
-                }
-        
-                this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [newAccessory]);
-
-                this.log.debug(`${accessory.NAME} added.`);
-            }  
-        }            
+        return;
     }
 }

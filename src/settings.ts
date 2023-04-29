@@ -1,15 +1,16 @@
-export const PLATFORM_NAME = 'AquaConnectLite';
+const PLATFORM_NAME = 'AquaConnectLite';
 
-export const PLUGIN_NAME = 'homebridge-aqua-connect-lite';
+const PLUGIN_NAME = 'homebridge-aqua-connect-lite';
 
-export const AC_API_SETTINGS = {
+const AC_API_SETTINGS = {
     PATH: "/WNewSt.htm",
     UPDATE_LOCAL_SERVER_POST_BODY: 'Update Local Server&'
 };
 
-export const ACCESSORY_TYPE = {
+const ACCESSORY_TYPE = {
     LIGHT: 'light',
-    SWITCH: 'switch'
+    SWITCH: 'switch',
+    MODESWITCH: 'modeswitch',
 };
 
 const ACCESSORY_NAME = {
@@ -17,10 +18,18 @@ const ACCESSORY_NAME = {
     AUXONE: 'Aux 1',
     AUXTWO: 'Aux 2',
     HEATER: 'Heater',
-    SPAMODE: 'Spa Mode'
+    SPA: 'Spa',
+    POOL: 'Pool',
+    SPILLOVER: 'Spillover',
 };
 
-export const ACCESSORIES = [
+const ACCESSORY_MODE = {
+    POOL: 'pool',
+    SPA: 'spa',
+    SPILLOVER: 'spillover',
+}
+
+const ACCESSORIES = [
     {
         NAME: ACCESSORY_NAME.LIGHT,
         TYPE: ACCESSORY_TYPE.LIGHT,
@@ -46,9 +55,26 @@ export const ACCESSORIES = [
         STATUS_KEY_INDEX: 6
     },
     {
-        NAME: ACCESSORY_NAME.SPAMODE,
-        TYPE: ACCESSORY_TYPE.SWITCH,
+        NAME: ACCESSORY_NAME.SPA,
+        TYPE: ACCESSORY_TYPE.MODESWITCH,
+        MODE: ACCESSORY_MODE.SPA,
         PROCESS_KEY_NUM: '07',
         STATUS_KEY_INDEX: 1
-    }
+    },
+    {
+        NAME: ACCESSORY_NAME.POOL,
+        TYPE: ACCESSORY_TYPE.MODESWITCH,
+        MODE: ACCESSORY_MODE.POOL,
+        PROCESS_KEY_NUM: '07',
+        STATUS_KEY_INDEX: 0
+    },
+    {
+        NAME: ACCESSORY_NAME.SPILLOVER,
+        TYPE: ACCESSORY_TYPE.MODESWITCH,
+        MODE: ACCESSORY_MODE.SPILLOVER,
+        PROCESS_KEY_NUM: '07',
+        STATUS_KEY_INDEX: 2
+    },
 ];
+
+export { PLATFORM_NAME, PLUGIN_NAME, AC_API_SETTINGS, ACCESSORY_TYPE, ACCESSORY_MODE, ACCESSORIES}

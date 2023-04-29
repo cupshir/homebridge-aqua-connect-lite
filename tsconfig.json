@@ -15,8 +15,6 @@
     "rootDir": "./src",
     "strict": true,
     "esModuleInterop": true,
-//changes to handle build errors 
-//    "noImplicitAny": true
     "noImplicitAny": false
   },
   "include": [

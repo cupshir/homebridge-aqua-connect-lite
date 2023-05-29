@@ -19,6 +19,7 @@ export class AquaConnectLitePlatform implements DynamicPlatformPlugin {
     public lastResponse: string;
 
     public modeToggleInProgress: boolean;
+    public enabledModes: Array<ModeSwitch>;
     public currentMode: string;
     public expectedMode: string;
 
@@ -33,6 +34,7 @@ export class AquaConnectLitePlatform implements DynamicPlatformPlugin {
 
 
         this.modeToggleInProgress = false;
+        this.enabledModes = [];
         this.currentMode = '';
         this.expectedMode = '';
 
@@ -107,8 +109,8 @@ export class AquaConnectLitePlatform implements DynamicPlatformPlugin {
             case ACCESSORY_TYPE.SWITCH:
                 new Switch(platform, accessory);
                 break;
-            case ACCESSORY_TYPE.MODESWITCH:
-                new ModeSwitch(platform, accessory);
+            case ACCESSORY_TYPE.MODESWITCH: 
+                this.enabledModes.push( new ModeSwitch(platform, accessory));
                 break;
             default:
                 break;

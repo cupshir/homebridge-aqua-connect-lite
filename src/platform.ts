@@ -23,6 +23,8 @@ export class AquaConnectLitePlatform implements DynamicPlatformPlugin {
     public currentMode: string;
     public expectedMode: string;
 
+    public state;
+
     constructor(
         public readonly log: Logger,
         public readonly config: PlatformConfig,
@@ -37,6 +39,9 @@ export class AquaConnectLitePlatform implements DynamicPlatformPlugin {
         this.enabledModes = [];
         this.currentMode = '';
         this.expectedMode = '';
+
+        this.state = {};
+
 
         this.api.on('didFinishLaunching', () => {
             if (!this.config.disclaimer) {
@@ -83,7 +88,7 @@ export class AquaConnectLitePlatform implements DynamicPlatformPlugin {
 
             accessory.context.deviceConfig = accessoryConfig;
 
-            this.initializeAccessory(this, accessory, accessoryConfig.TYPE);
+            this.initializeAccessory(this, accessory, accessoryConfig.TYPE, accessoryConfig.NAME);
             
             if (!newAccessory) {
                 this.api.updatePlatformAccessories([accessory]);
@@ -92,7 +97,11 @@ export class AquaConnectLitePlatform implements DynamicPlatformPlugin {
                 this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
                 this.log.debug(`${accessory.displayName} added.`);
             }
-        }            
+        }  
+        
+        console.log(this.state);
+        console.log(this.accessories);
+        console.log(this.enabledModes);
     }
 
     configureAccessory(accessory: PlatformAccessory) {
@@ -101,16 +110,19 @@ export class AquaConnectLitePlatform implements DynamicPlatformPlugin {
         }
     }
 
-    initializeAccessory(platform: AquaConnectLitePlatform, accessory: PlatformAccessory, accessoryType: string) {
+    initializeAccessory(platform: AquaConnectLitePlatform, accessory: PlatformAccessory, accessoryType: string, accessoryName: string) {
+        this.state[accessoryName] = false;
+        let newAccessory;
         switch (accessoryType) {
             case ACCESSORY_TYPE.LIGHT:
-                new Light(platform, accessory);
+                newAccessory = new Light(platform, accessory);
                 break;
             case ACCESSORY_TYPE.SWITCH:
-                new Switch(platform, accessory);
+                newAccessory = new Switch(platform, accessory);
                 break;
             case ACCESSORY_TYPE.MODESWITCH: 
                 this.enabledModes.push( new ModeSwitch(platform, accessory));
+                newAccessory = new ModeSwitch(platform, accessory);
                 break;
             default:
                 break;

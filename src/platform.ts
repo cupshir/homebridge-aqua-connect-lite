@@ -137,6 +137,15 @@ export class AquaConnectLitePlatform implements DynamicPlatformPlugin {
     }
 
     private initializeAccessory(accessory: PlatformAccessory, accessoryConfig: AccessoryConfig) {
+        const accessoryInformation = accessory.getService(this.Service.AccessoryInformation)
+            || accessory.addService(this.Service.AccessoryInformation);
+
+        accessoryInformation
+            .setCharacteristic(this.Characteristic.Manufacturer, 'Hayward')
+            .setCharacteristic(this.Characteristic.Model, 'Aqua Connect Lite')
+            .setCharacteristic(this.Characteristic.SerialNumber, `${PLATFORM_NAME}-${accessoryConfig.NAME}`)
+            .setCharacteristic(this.Characteristic.FirmwareRevision, '1.3.0-beta.1');
+
         switch (accessoryConfig.TYPE) {
             case ACCESSORY_TYPE.LIGHT:
                 new Light(this, accessory);

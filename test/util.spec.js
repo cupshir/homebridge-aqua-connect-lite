@@ -99,6 +99,35 @@ test('getResponse shares a pending refresh across concurrent callers', async () 
   assert.equal(requestCount, 1);
 });
 
+test('queueRequest serializes concurrent work in submission order', async () => {
+  const platform = createPlatformStub();
+  const events = [];
+
+  const first = __testing.queueRequest(platform, 0, async () => {
+    events.push('first:start');
+    await new Promise(resolve => setTimeout(resolve, 10));
+    events.push('first:end');
+    return 'first';
+  });
+
+  const second = __testing.queueRequest(platform, 0, async () => {
+    events.push('second:start');
+    events.push('second:end');
+    return 'second';
+  });
+
+  const [firstResult, secondResult] = await Promise.all([first, second]);
+
+  assert.equal(firstResult, 'first');
+  assert.equal(secondResult, 'second');
+  assert.deepEqual(events, [
+    'first:start',
+    'first:end',
+    'second:start',
+    'second:end',
+  ]);
+});
+
 test('GetRawLedStatus throws when the response body is malformed', () => {
   assert.throws(() => __testing.GetRawLedStatus('<html><body>missing delimiters</body></html>'));
 });

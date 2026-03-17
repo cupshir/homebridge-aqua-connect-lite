@@ -3,148 +3,118 @@ import { AquaConnectLitePlatform } from './platform';
 import axios from 'axios';
 import { parse } from 'node-html-parser';
 
-import { AC_API_SETTINGS, ACCESSORY_MODE } from './settings';
+import { AC_API_SETTINGS, ACCESSORY_MODE, AccessoryMode } from './settings';
 
-const ParseMode = async (platform: AquaConnectLitePlatform, requester: string, forceRefresh = false): Promise<string> => {
+export type DeviceState = 'on' | 'off' | 'blink' | 'nokey';
+
+const ParseMode = async (platform: AquaConnectLitePlatform, requester: string, forceRefresh = false): Promise<AccessoryMode> => {
 	const logTitle = `${requester} ParseMode: `;
 	const response = await getResponse(platform, requester, forceRefresh);
 
 	platform.log.debug(`${logTitle} response: ${response}`);
 
-	// get the raw led status from the html response
 	const rawLedStatus = GetRawLedStatus(response);
 	platform.log.debug(`${logTitle} rawLEDStatus: ${rawLedStatus}`);
 
 	const mode = rawLedStatus.substring(0, 1);
-	let parsedMode = '';
 	switch (mode) {
 		case 'T':
-			parsedMode = ACCESSORY_MODE.POOL;
-			break;
-	case 'E':
-			parsedMode = ACCESSORY_MODE.SPA;
-			break;
-	case 'D':
-			parsedMode = ACCESSORY_MODE.SPILLOVER;
-			break;
+			return ACCESSORY_MODE.POOL;
+		case 'E':
+			return ACCESSORY_MODE.SPA;
+		case 'D':
+			return ACCESSORY_MODE.SPILLOVER;
 		default:
-			break;
+			throw new Error(`Unable to determine current mode from raw status "${rawLedStatus}".`);
 	}
-
-	return parsedMode;
 };
 
-const ParseState = async (platform: AquaConnectLitePlatform, deviceKeyIndex: number, requester: string, forceRefresh = false): Promise<string> => {
+const ParseState = async (platform: AquaConnectLitePlatform, deviceKeyIndex: number, requester: string, forceRefresh = false): Promise<DeviceState> => {
 	const logTitle = `${requester} ${deviceKeyIndex} ParseState: `;
 	const response = await getResponse(platform, requester, forceRefresh);
 
 	platform.log.debug(`${logTitle} response: ${response}`);
 
-	// get the raw led status from the html response
 	const rawLedStatus = GetRawLedStatus(response);
 	platform.log.debug(`${logTitle} rawLEDStatus: ${rawLedStatus}`);
 
-	// convert the raw led status into ascii byte string
 	const asciiByteString = ConvertToAsciiByteString(rawLedStatus);
 	platform.log.debug(`${logTitle} asciiByteString: ${asciiByteString}`);
 
-	// the ascii byte string has 24 bits that indicate the status
-	// of various led's on the controller
-	// using our device key index, get the respective led status
 	const ledStatus = GetLedStatus(asciiByteString, deviceKeyIndex);
 	platform.log.debug(`${logTitle} ledStatus: ${ledStatus}`);
 
 	return ledStatus;
-}
+};
 
 const getResponse = async (platform: AquaConnectLitePlatform, requester: string, forceRefresh = false): Promise<string> => {
 	const logTitle = `${requester} getResponse: `;
-	while (platform.requestInProgress) {
-		if (platform.requestInProgress) {
-			platform.log.debug(`${logTitle} request in progress, sleeping ${platform.config.get_delay}ms`);
 
-			await Sleep(platform.config.get_delay);
-		}
-	}
+	const shouldUseCache = !forceRefresh
+		&& platform.lastResponse
+		&& Date.now() - platform.lastResponseAt <= platform.getGetCacheThreshold();
 
-	let response = platform.lastResponse;
-
-	const now = Date.now();
-	if (forceRefresh || !response || now - platform.lastRequest > platform.config.get_cache_threshold) {
-		platform.requestInProgress = true;
-		platform.log.debug(`${logTitle} forceRefresh: ${forceRefresh}; refreshForced = true, lastResponse empty or older than ${platform.config.get_cache_threshold}ms, requesting new response.`);
-		await GetDeviceState(platform)
-			.then((newResponse) => {
-				platform.log.debug(`${logTitle} newResponse: ${newResponse}`);
-				response = newResponse;
-
-				platform.lastResponse = newResponse;
-				platform.lastRequest = Date.now();
-				platform.requestInProgress = false;
-			})
-			.catch((error) => {
-				platform.log.debug(`${logTitle} GetDeviceState failed. Error: ${error}`);
-				
-				platform.requestInProgress = false;
-				response = '';
-			});
-	} else {
+	if (shouldUseCache) {
 		platform.log.debug(`${logTitle} using cached response. platform.lastResponse: ${platform.lastResponse}`);
+		return platform.lastResponse;
 	}
 
-	return response;
-}
+	if (!platform.pendingRefresh) {
+		platform.pendingRefresh = GetDeviceState(platform)
+			.then((response) => {
+				platform.lastResponse = response;
+				platform.lastResponseAt = Date.now();
+				platform.log.debug(`${logTitle} refreshed response.`);
+				return response;
+			})
+			.finally(() => {
+				platform.pendingRefresh = undefined;
+			});
+	}
+
+	return platform.pendingRefresh;
+};
 
 const GetDeviceState = (platform: AquaConnectLitePlatform): Promise<string> => {
-	return new Promise<string>((resolve, reject) => {
-		const body = AC_API_SETTINGS.UPDATE_LOCAL_SERVER_POST_BODY;
-		
-		const config = {
+	const body = AC_API_SETTINGS.UPDATE_LOCAL_SERVER_POST_BODY;
+
+	return queueRequest(platform, platform.getGetDelay(), async () => {
+		const response = await axios({
 			method: 'post',
 			url: `http://${platform.config.bridge_ip_address}${AC_API_SETTINGS.PATH}`,
-			headers: { 
-				'Content-Type': 'application/x-www-form-urlencoded', 
-				'Content-Length': `${body.length}`, 
-				'Connection': 'close'
+			timeout: AC_API_SETTINGS.REQUEST_TIMEOUT_MS,
+			headers: {
+				'Content-Type': 'application/x-www-form-urlencoded',
+				'Content-Length': `${body.length}`,
+				'Connection': 'close',
 			},
-			data : body
-		};
-			
-		axios(config)
-			.then(function (response) {
-				resolve(response.data);
-			})
-			.catch(function (error) {
-				reject(error);
-			});
+			data: body,
+		});
+
+		return response.data;
 	});
 };
 
 
 const ToggleState = (platform: AquaConnectLitePlatform, processKeyNum: string, requester: string): Promise<string> => {
-	return new Promise<string>((resolve,reject) => {
-		const logTitle = `${requester} ${processKeyNum} ToggleDeviceState: `;
-		const body = "KeyId=" + processKeyNum + "&";
+	const logTitle = `${requester} ${processKeyNum} ToggleDeviceState: `;
+	const body = `KeyId=${processKeyNum}&`;
 
-		const config = {
+	return queueRequest(platform, platform.getSetDelay(), async () => {
+		const response = await axios({
 			method: 'post',
 			url: `http://${platform.config.bridge_ip_address}${AC_API_SETTINGS.PATH}`,
-			headers: { 
-				'Content-Type': 'application/x-www-form-urlencoded', 
-				'Content-Length': `${body.length}`, 
-				'Connection': 'close'
+			timeout: AC_API_SETTINGS.REQUEST_TIMEOUT_MS,
+			headers: {
+				'Content-Type': 'application/x-www-form-urlencoded',
+				'Content-Length': `${body.length}`,
+				'Connection': 'close',
 			},
-			data : body
-		};
-		
-		axios(config)
-			.then(function (response) {
-				platform.log.debug(`${logTitle} responseData: ${response.data}`);
-				resolve('success');
-			})
-			.catch(function (error) {
-				reject(error);
-			});
+			data: body,
+		});
+
+		platform.log.debug(`${logTitle} responseData: ${response.data}`);
+		return 'success';
 	});
 };
 
@@ -153,38 +123,32 @@ const GetRawLedStatus = (htmlData: string): string => {
 
 	const splitResults = lcdResults.querySelector('body')?.text.split('xxx');
 
-	if (splitResults && splitResults.length >= 2) {
+	if (splitResults && splitResults.length >= 3 && splitResults[2]) {
 		return splitResults[2].trim().toString();
 	}        
 
-	return '';
-}
+	throw new Error('Unable to parse LED status from AquaConnect response.');
+};
 
-const GetLedStatus = (asciiByteString: string, deviceKeyIndex: number): string => {
-		let statusString = '';
+const GetLedStatus = (asciiByteString: string, deviceKeyIndex: number): DeviceState => {
+	if (deviceKeyIndex < 0 || deviceKeyIndex >= asciiByteString.length) {
+		throw new Error(`LED status index ${deviceKeyIndex} is out of bounds for "${asciiByteString}".`);
+	}
 
-		if (deviceKeyIndex >= 0 && deviceKeyIndex < asciiByteString.length) {
-			const statusCode = asciiByteString[deviceKeyIndex];
-			switch (statusCode) {
-				case "3":
-					statusString = 'nokey';
-					break;
-				case "4":
-					statusString = 'off';
-					break;
-				case "5":
-					statusString = 'on';
-					break;
-				case "6":
-					statusString = 'blink';
-					break;			
-				default:
-					break;
-			}
-		}		
-
-		return statusString;
-}
+	const statusCode = asciiByteString[deviceKeyIndex];
+	switch (statusCode) {
+		case '3':
+			return 'nokey';
+		case '4':
+			return 'off';
+		case '5':
+			return 'on';
+		case '6':
+			return 'blink';
+		default:
+			throw new Error(`Unknown LED status code "${statusCode}" at index ${deviceKeyIndex}.`);
+	}
+};
 
 const ConvertToAsciiByteString = (rawLedStatus: string): string => {
 	let asciiByteString = '';
@@ -252,10 +216,34 @@ const ExtractNibbles = (asciiByte: string): string => {
     }
 
 	return nibbles;	
-}
+};
+
+const queueRequest = async <T>(
+	platform: AquaConnectLitePlatform,
+	minDelayMs: number,
+	requestFactory: () => Promise<T>,
+): Promise<T> => {
+	const runRequest = async () => {
+		const elapsed = Date.now() - platform.lastRequestAt;
+		const waitTime = Math.max(0, minDelayMs - elapsed);
+		if (waitTime > 0) {
+			await Sleep(waitTime);
+		}
+
+		try {
+			return await requestFactory();
+		} finally {
+			platform.lastRequestAt = Date.now();
+		}
+	};
+
+	const queuedRequest = platform.requestQueue.then(runRequest, runRequest);
+	platform.requestQueue = queuedRequest.then(() => undefined, () => undefined);
+	return queuedRequest;
+};
 
 const Sleep = async (duration = 1000) => {
 	await new Promise(resolve => setTimeout(resolve, duration));
-}
+};
 
-export { ParseMode, ParseState, GetDeviceState, ToggleState, Sleep }
+export { ParseMode, ParseState, GetDeviceState, ToggleState, Sleep };

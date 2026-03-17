@@ -1,7 +1,8 @@
-import { Service, PlatformAccessory, CharacteristicValue, Characteristic } from 'homebridge';
+import { Service, PlatformAccessory, CharacteristicValue } from 'homebridge';
 
 import { AquaConnectLitePlatform } from './platform';
-import { ParseMode, ToggleState, Sleep } from './util'
+import { ModeAccessoryConfig } from './settings';
+import { ParseMode, Sleep, ToggleState } from './util';
 
 export class ModeSwitch {
     private service: Service;
@@ -10,7 +11,8 @@ export class ModeSwitch {
 
     constructor(
         private readonly platform: AquaConnectLitePlatform,
-        private readonly accessory: PlatformAccessory) {
+        public readonly accessory: PlatformAccessory,
+        private readonly modeConfig: ModeAccessoryConfig) {
 
         this.isOn = false;
 
@@ -24,10 +26,12 @@ export class ModeSwitch {
     }
 
     async setOn(newState: CharacteristicValue) {
+        const shouldEnable = newState === true;
+
         this.platform.log.debug(`---setOn-----${this.accessory.displayName} starting ModeSwitch setOn--------------`);
         this.platform.log.debug(`
             isOn: ${this.isOn};
-            newState: ${newState};
+            newState: ${shouldEnable};
             currentMode: ${this.platform.currentMode};
             modeToggleInProgress: ${this.platform.modeToggleInProgress};`);
 
@@ -37,29 +41,27 @@ export class ModeSwitch {
             return;
         }
 
-        if (newState === false) {
+        if (!shouldEnable) {
             this.platform.log.debug(`${this.accessory.displayName}: New device state should be off, nothing to do.`);
-            this.platform.currentMode = this.platform.currentMode === this.accessory.context.deviceConfig.MODE ? '' : this.platform.currentMode;
-            this.isOn = this.platform.currentMode === this.accessory.context.deviceConfig.MODE;
+            this.syncOnState(this.platform.currentMode === this.modeConfig.MODE);
             return;
         }
 
-        if (this.platform.currentMode == this.accessory.context.deviceConfig.MODE) {
+        if (this.platform.currentMode === this.modeConfig.MODE) {
             this.platform.log.debug(`${this.accessory.displayName}: Device already in requested mode, ignoring setOn`);
-            this.isOn = true;
+            this.syncOnState(true);
             return;
         }
-        
-        this.processSetOn(newState)
-            .then((response) => {
-                this.platform.log.debug(`${this.accessory.displayName}: ModeSwitch setOn success.
-                    ${response}`);
 
-            })
-            .catch((error) => {
-                this.platform.log.debug(`${this.accessory.displayName}: ModeSwitch setOn failed.
-                    ${error}`);
-            });
+        try {
+            const response = await this.processSetOn();
+            this.platform.log.debug(`${this.accessory.displayName}: ModeSwitch setOn success.
+                ${response}`);
+        } catch (error) {
+            this.platform.log.error(`${this.accessory.displayName}: ModeSwitch setOn failed.
+                ${error}`);
+            throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
+        }
     }
 
     async getOn(): Promise<CharacteristicValue> {
@@ -72,126 +74,88 @@ export class ModeSwitch {
         if (this.platform.modeToggleInProgress) {
             this.platform.log.debug(`${this.accessory.displayName}: Mode toggle in progress, getOn request ignored.
                 expectedMode: ${this.platform.expectedMode},`);
-            return this.accessory.context.deviceConfig.MODE === this.platform.expectedMode;
+            return this.modeConfig.MODE === this.platform.expectedMode;
         }
 
         const isDeviceOn = await this.isDeviceOn();
 
         if (isDeviceOn) {
-            this.isOn = true;
-            this.platform.currentMode = this.accessory.context.deviceConfig.MODE;
+            this.syncOnState(true);
+            this.platform.currentMode = this.modeConfig.MODE;
         } else {
-            this.isOn = false;
+            this.syncOnState(false);
         }
             
         return isDeviceOn;
     }
 
-    async processSetOn(newState: CharacteristicValue): Promise<string> {
+    async processSetOn(): Promise<string> {
         this.platform.log.debug(`---processSetOn----${this.accessory.displayName} Starting processSetOn--------------`);
 
-        this.platform.log.debug(`${this.accessory.displayName}: Checking if device is on`);
-        let isDeviceOn = await this.isDeviceOn(true);
-
-        if (!isDeviceOn) {
-            // toggle device
+        try {
             this.platform.modeToggleInProgress = true;
-            this.platform.expectedMode = this.accessory.context.deviceConfig.MODE;
-            
-            await Sleep(this.platform.config.set_delay);
+            this.platform.expectedMode = this.modeConfig.MODE;
 
-            this.platform.log.debug(`${this.accessory.displayName}: 1st toggle device.
-                currentMode: ${this.platform.currentMode};`);
+            for (let attempt = 1; attempt <= 3; attempt++) {
+                const isDeviceOn = await this.isDeviceOn(true);
+                if (isDeviceOn) {
+                    this.platform.currentMode = this.modeConfig.MODE;
+                    this.syncOnState(true);
 
-            await this.toggleDevice();
+                    this.platform.enabledModes.forEach(mode => {
+                        if (this.accessory.UUID !== mode.accessory.UUID) {
+                            mode.syncOnState(false);
+                        }
+                    });
 
-            await Sleep(this.platform.config.set_delay);
+                    return `${this.accessory.displayName}: processSetOn success after ${attempt - 1} toggles.`;
+                }
 
-            isDeviceOn = await this.isDeviceOn(true);
-        }
+                this.platform.log.debug(`${this.accessory.displayName}: toggle attempt ${attempt}.
+                    currentMode: ${this.platform.currentMode};`);
 
-        if (!isDeviceOn) {
-            // device not in correct state, toggle a 2nd time
-            await Sleep(this.platform.config.set_delay);
-
-            this.platform.log.debug(`${this.accessory.displayName}: 2nd toggle device.
-                currentMode: ${this.platform.currentMode};`);
-
-            await this.toggleDevice();
-
-            // check again to see if we made it into the correct state
-            await Sleep(this.platform.config.set_delay);
-
-            isDeviceOn = await this.isDeviceOn(true);
-        }
-
-        if (!isDeviceOn) {
-            // device not in correct state, toggle a 3rd time
-            await Sleep(this.platform.config.set_delay);
-
-            this.platform.log.debug(`${this.accessory.displayName}: 3rd toggle device.
-                currentMode: ${this.platform.currentMode};`);
-
-            await this.toggleDevice();
-
-            // check again to see if we made it into the correct state
-            await Sleep(this.platform.config.set_delay);
-
-            isDeviceOn = await this.isDeviceOn(true);
-        }
-
-        this.platform.modeToggleInProgress = false;
-        this.platform.expectedMode = '';
-
-        if (!isDeviceOn) {
-            throw new Error(`${this.accessory.displayName}: processSetOn something failed.`);
-        }
-
-        // force the other modes off
-        this.platform.enabledModes.forEach(mode => {
-            if (this.accessory.UUID !== mode.accessory.UUID) {
-                console.log('setting mode off........')
-                mode.service.updateCharacteristic(this.platform.Characteristic.On, false);
+                await this.toggleDevice();
+                await Sleep(this.platform.getSetDelay());
             }
-        });
 
-        this.isOn = true;
-        this.platform.currentMode = this.accessory.context.deviceConfig.MODE;
-
-        return `${this.accessory.displayName}: processSetOn success.`;
+            throw new Error(`${this.accessory.displayName}: processSetOn something failed.`);
+        } finally {
+            this.platform.modeToggleInProgress = false;
+            this.platform.expectedMode = '';
+        }
     }
 
-    async isDeviceOn(forceRefresh = false) {
-        let isDeviceOn = false;
-
-        await ParseMode(this.platform, this.accessory.displayName, forceRefresh)
-        .then((deviceMode) => {
-            isDeviceOn = this.accessory.context.deviceConfig.MODE === deviceMode;
-
+    async isDeviceOn(forceRefresh = false): Promise<boolean> {
+        try {
+            const deviceMode = await ParseMode(this.platform, this.accessory.displayName, forceRefresh);
             this.platform.log.debug(`${this.accessory.displayName}: ParseMode success.
                 deviceMode: ${deviceMode}; 
-                isDeviceOn: ${isDeviceOn};`);
-        })
-        .catch((error) => {
+                isDeviceOn: ${this.modeConfig.MODE === deviceMode};`);
+
+            return this.modeConfig.MODE === deviceMode;
+        } catch (error) {
             this.platform.log.error(`${this.accessory.displayName}: ParseMode error: ${error}`);
             throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-        });
-
-        return isDeviceOn;
+        }
     }
 
-    async toggleDevice() {
-        await ToggleState(
-            this.platform,
-            this.accessory.context.deviceConfig.PROCESS_KEY_NUM,
-            this.accessory.displayName)
-        .then((message) => {
+    async toggleDevice(): Promise<void> {
+        try {
+            const message = await ToggleState(
+                this.platform,
+                this.modeConfig.PROCESS_KEY_NUM,
+                this.accessory.displayName,
+            );
             this.platform.log.debug(`${this.accessory.displayName}: ToggleDeviceState success.
                 message: ${message};`);
-        })
-        .catch((error) => {
+        } catch (error) {
             this.platform.log.error(`${this.accessory.displayName}: ToggleDeviceState failed: ${error}`);
             throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-        });
+        }
+    }
+
+    public syncOnState(isOn: boolean) {
+        this.isOn = isOn;
+        this.service.updateCharacteristic(this.platform.Characteristic.On, isOn);
     }
 }

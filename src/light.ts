@@ -1,7 +1,7 @@
 import { Service, PlatformAccessory, CharacteristicValue } from 'homebridge';
 
 import { AquaConnectLitePlatform } from './platform';
-import { ParseState, ToggleState, Sleep } from './util'
+import { ParseState, ToggleState } from './util';
 
 export class Light {
     private service: Service;
@@ -27,10 +27,12 @@ export class Light {
     }
 
     async setOn(newState: CharacteristicValue) {
+        const targetState = newState === true;
+
         this.platform.log.debug(`---setOn-----${this.accessory.displayName} starting Switch setOn--------------`);
         this.platform.log.debug(`
             isOn: ${this.currentState.isOn};
-            newState: ${newState === true ? 'on' : 'off'};
+            newState: ${targetState ? 'on' : 'off'};
             toggleInProgress: ${this.currentState.toggleInProgress};`);
         
         if (this.currentState.toggleInProgress) {
@@ -39,35 +41,30 @@ export class Light {
         }
 
         const isDeviceOn = await this.isDeviceOn(true);
-        if (isDeviceOn === newState) {
+        if (isDeviceOn === targetState) {
             this.platform.log.debug(`${this.accessory.displayName}: Device already in requested state, ignoring setOn`);
             return;
         }
 
         this.currentState.toggleInProgress = true;
-        this.currentState.expectedToggleState = newState === true;
+        this.currentState.expectedToggleState = targetState;
         this.currentState.forceRefresh = true;
 
-        await Sleep(this.platform.config.set_delay);
-
-        ToggleState(
-            this.platform,
-            this.accessory.context.deviceConfig.PROCESS_KEY_NUM,
-            this.accessory.displayName)
-        .then(async (message) => {
+        try {
+            const message = await ToggleState(
+                this.platform,
+                this.accessory.context.deviceConfig.PROCESS_KEY_NUM,
+                this.accessory.displayName,
+            );
             this.platform.log.debug(`${this.accessory.displayName}: ToggleDeviceState success.
                 message: ${message};`);
-
-            this.currentState.toggleInProgress = false;
-        })
-        .catch((error) => {
-            this.currentState.toggleInProgress = false;
-
+            this.currentState.isOn = targetState;
+        } catch (error) {
             this.platform.log.error(`${this.accessory.displayName}: error getting device state: ${error}`);
             throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-        });
-
-        this.currentState.isOn = newState === true;
+        } finally {
+            this.currentState.toggleInProgress = false;
+        }
     }
 
     async getOn(): Promise<CharacteristicValue> {
@@ -80,7 +77,7 @@ export class Light {
         if (this.currentState.toggleInProgress) {
             this.platform.log.debug(`${this.accessory.displayName}: Toggle in progress, getOn request ignored.
             expectedToggleState: ${this.currentState.expectedToggleState},`);
-            return this.currentState.expectedToggleState === true ? 'on' : 'off';
+            return this.currentState.expectedToggleState;
         }
 
         const isDeviceOn = await this.isDeviceOn(this.currentState.forceRefresh);
@@ -90,24 +87,22 @@ export class Light {
         return isDeviceOn;
     }
 
-    async isDeviceOn(forceRefresh = false) {
-        let isDeviceOn = false;
-
-        await ParseState(this.platform,
-            this.accessory.context.deviceConfig.STATUS_KEY_INDEX, 
-            this.accessory.displayName,
-            forceRefresh)
-        .then((deviceState) => {
-            isDeviceOn = deviceState === 'on';
+    async isDeviceOn(forceRefresh = false): Promise<boolean> {
+        try {
+            const deviceState = await ParseState(
+                this.platform,
+                this.accessory.context.deviceConfig.STATUS_KEY_INDEX,
+                this.accessory.displayName,
+                forceRefresh,
+            );
 
             this.platform.log.debug(`${this.accessory.displayName}: ParseState success.
                 deviceState: ${deviceState};`);
-        })
-        .catch((error) => {
+
+            return deviceState === 'on';
+        } catch (error) {
             this.platform.log.error(`${this.accessory.displayName}: ParseState error: ${error}`);
             throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-        });
-
-        return isDeviceOn;
+        }
     }
 }

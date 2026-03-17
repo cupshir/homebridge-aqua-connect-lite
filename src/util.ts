@@ -7,6 +7,12 @@ import { AC_API_SETTINGS, ACCESSORY_MODE, AccessoryMode } from './settings';
 
 export type DeviceState = 'on' | 'off' | 'blink' | 'nokey';
 
+type RequestImplementation = (
+	platform: AquaConnectLitePlatform,
+	body: string,
+	minDelayMs: number,
+) => Promise<string>;
+
 const ParseMode = async (platform: AquaConnectLitePlatform, requester: string, forceRefresh = false): Promise<AccessoryMode> => {
 	const logTitle = `${requester} ParseMode: `;
 	const response = await getResponse(platform, requester, forceRefresh);
@@ -78,21 +84,7 @@ const getResponse = async (platform: AquaConnectLitePlatform, requester: string,
 const GetDeviceState = (platform: AquaConnectLitePlatform): Promise<string> => {
 	const body = AC_API_SETTINGS.UPDATE_LOCAL_SERVER_POST_BODY;
 
-	return queueRequest(platform, platform.getGetDelay(), async () => {
-		const response = await axios({
-			method: 'post',
-			url: `http://${platform.config.bridge_ip_address}${AC_API_SETTINGS.PATH}`,
-			timeout: AC_API_SETTINGS.REQUEST_TIMEOUT_MS,
-			headers: {
-				'Content-Type': 'application/x-www-form-urlencoded',
-				'Content-Length': `${body.length}`,
-				'Connection': 'close',
-			},
-			data: body,
-		});
-
-		return response.data;
-	});
+	return requestImplementation(platform, body, platform.getGetDelay());
 };
 
 
@@ -100,20 +92,8 @@ const ToggleState = (platform: AquaConnectLitePlatform, processKeyNum: string, r
 	const logTitle = `${requester} ${processKeyNum} ToggleDeviceState: `;
 	const body = `KeyId=${processKeyNum}&`;
 
-	return queueRequest(platform, platform.getSetDelay(), async () => {
-		const response = await axios({
-			method: 'post',
-			url: `http://${platform.config.bridge_ip_address}${AC_API_SETTINGS.PATH}`,
-			timeout: AC_API_SETTINGS.REQUEST_TIMEOUT_MS,
-			headers: {
-				'Content-Type': 'application/x-www-form-urlencoded',
-				'Content-Length': `${body.length}`,
-				'Connection': 'close',
-			},
-			data: body,
-		});
-
-		platform.log.debug(`${logTitle} responseData: ${response.data}`);
+	return requestImplementation(platform, body, platform.getSetDelay()).then((response) => {
+		platform.log.debug(`${logTitle} responseData: ${response}`);
 		return 'success';
 	});
 };
@@ -242,8 +222,43 @@ const queueRequest = async <T>(
 	return queuedRequest;
 };
 
+const defaultRequestImplementation: RequestImplementation = async (platform, body, minDelayMs) => {
+	return queueRequest(platform, minDelayMs, async () => {
+		const response = await axios({
+			method: 'post',
+			url: `http://${platform.config.bridge_ip_address}${AC_API_SETTINGS.PATH}`,
+			timeout: AC_API_SETTINGS.REQUEST_TIMEOUT_MS,
+			headers: {
+				'Content-Type': 'application/x-www-form-urlencoded',
+				'Content-Length': `${body.length}`,
+				'Connection': 'close',
+			},
+			data: body,
+		});
+
+		return response.data;
+	});
+};
+
+let requestImplementation: RequestImplementation = defaultRequestImplementation;
+
 const Sleep = async (duration = 1000) => {
 	await new Promise(resolve => setTimeout(resolve, duration));
+};
+
+export const __testing = {
+	GetRawLedStatus,
+	GetLedStatus,
+	ConvertToAsciiByteString,
+	ExtractNibbles,
+	getResponse,
+	queueRequest,
+	setRequestImplementation(nextImplementation: RequestImplementation) {
+		requestImplementation = nextImplementation;
+	},
+	resetRequestImplementation() {
+		requestImplementation = defaultRequestImplementation;
+	},
 };
 
 export { ParseMode, ParseState, GetDeviceState, ToggleState, Sleep };

@@ -20,10 +20,48 @@
                     "title": "Accessory",
                     "type": "string",
                     "enum": [
+                        "Pool Filter",
                         "Pool Light",
                         "Aux 1",
-                        "Aux 2"
+                        "Aux 2",
+                        "Aux 3",
+                        "Aux 4",
+                        "Aux 5",
+                        "Aux 6"
                     ]
+                }
+            },
+            "accessory_name_overrides": {
+                "title": "Accessory Name Overrides",
+                "description": "Override the HomeKit display name for a specific accessory without changing its internal identity.",
+                "type": "array",
+                "minItems": 0,
+                "items": {
+                    "type": "object",
+                    "title": "Accessory Name",
+                    "description": "Choose an accessory and set the name that will appear in HomeKit.",
+                    "properties": {
+                        "accessory": {
+                            "title": "Accessory",
+                            "type": "string",
+                            "enum": [
+                                "Pool Filter",
+                                "Pool Light",
+                                "Aux 1",
+                                "Aux 2",
+                                "Aux 3",
+                                "Aux 4",
+                                "Aux 5",
+                                "Aux 6"
+                            ]
+                        },
+                        "name": {
+                            "title": "HomeKit Name",
+                            "type": "string"
+                        }
+                    },
+                    "required": ["accessory", "name"],
+                    "additionalProperties": false
                 }
             }
         }

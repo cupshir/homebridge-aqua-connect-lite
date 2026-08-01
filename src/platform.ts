@@ -29,18 +29,29 @@ export class AquaConnectLitePlatform implements DynamicPlatformPlugin {
         }
     }
 
+    private getAccessoryDisplayName(accessory: any): string {
+        const override = Array.isArray(this.config.accessory_name_overrides)
+            ? this.config.accessory_name_overrides.find((entry: any) => entry.accessory === accessory.NAME)
+            : undefined;
+
+        return override && override.name ? override.name : accessory.NAME;
+    }
+
     discoverAccessories() {
         for (const accessory of ACCESSORIES) {
             this.log.debug('---------------------------');
             this.log.debug(`${accessory.NAME} discover started.`);
 
-            let excludeAccessory = false;            
+            let excludeAccessory = false;
             if (this.config.exclude_accessories && this.config.exclude_accessories.includes(accessory.NAME)) {
                 excludeAccessory = true;
             }
 
-            const uuid = this.api.hap.uuid.generate((PLATFORM_NAME + accessory.NAME + accessory.TYPE));
-            const existingAccessory = this.accessories.find(a => a.UUID === uuid);
+            const legacyUuid = this.api.hap.uuid.generate((PLATFORM_NAME + accessory.NAME + accessory.TYPE));
+            const stableUuid = this.api.hap.uuid.generate((PLATFORM_NAME + accessory.ID + accessory.TYPE));
+            const existingAccessory = this.accessories.find(a => a.UUID === stableUuid) || this.accessories.find(a => a.UUID === legacyUuid);
+            const uuid = existingAccessory ? existingAccessory.UUID : stableUuid;
+            const displayName = this.getAccessoryDisplayName(accessory);
 
             if (existingAccessory) {
                 // if an accessory was included previously, but now excluded
@@ -54,7 +65,8 @@ export class AquaConnectLitePlatform implements DynamicPlatformPlugin {
                     continue;
                 }
 
-                existingAccessory.context.device = accessory;        
+                existingAccessory.context.device = accessory;
+                existingAccessory.displayName = displayName;
                 this.api.updatePlatformAccessories([existingAccessory]);
 
                 switch (accessory.TYPE) {
@@ -76,8 +88,8 @@ export class AquaConnectLitePlatform implements DynamicPlatformPlugin {
                     // skip to next accessory
                     continue;
                 }
-        
-                const newAccessory = new this.api.platformAccessory(accessory.NAME, uuid);
+
+                const newAccessory = new this.api.platformAccessory(displayName, uuid);
                 newAccessory.context.device = accessory;
 
                 switch (accessory.TYPE) {
@@ -90,11 +102,11 @@ export class AquaConnectLitePlatform implements DynamicPlatformPlugin {
                     default:
                         break;
                 }
-        
+
                 this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [newAccessory]);
 
-                this.log.debug(`${accessory.NAME} added.`);
-            }  
+                this.log.debug(`${displayName} added.`);
+            }
         }            
     }
 }

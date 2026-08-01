@@ -48,7 +48,9 @@ export const GetDeviceState = (platform: AquaConnectLitePlatform, deviceKeyIndex
 
 export const ToggleDeviceState = (platform: AquaConnectLitePlatform, processKeyNum: string): Promise<string> => {
 	return new Promise<string>((resolve,reject) => {
-		const body = "KeyId=" + processKeyNum + "&";
+		const body = `KeyId=${processKeyNum}&`;
+
+		platform.log.debug(`${processKeyNum} ToggleDeviceState - requestBody: ${body}`);
 
 		const config = {
 			method: 'post',
@@ -60,13 +62,14 @@ export const ToggleDeviceState = (platform: AquaConnectLitePlatform, processKeyN
 			},
 			data : body
 		};
-		
+        
 		axios(config)
 			.then(function (response) {
 				platform.log.debug(`${processKeyNum} ToggleDeviceState - responseData: ${response.data}`);
 				resolve('success');
 			})
 			.catch(function (error) {
+				platform.log.error(`${processKeyNum} ToggleDeviceState - error: ${error}`);
 				reject(error);
 			});
 	});
